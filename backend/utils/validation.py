@@ -1,110 +1,86 @@
 """
-Validation utilities for ClinicWire
+Validation utilities for 33Health MCP
 """
 
-import hashlib
 import re
-from datetime import datetime
-from typing import Optional, Dict, Any, Tuple
-from .phone import normalize_us_number, is_valid_e164
+import hashlib
+from typing import Dict, Any, Optional
 
-
-def validate_phone_number(phone: str, field_name: str = "phone") -> str:
+def validate_phone_number(phone: str) -> Optional[str]:
     """
-    Validate and normalize a phone number to E.164 format.
-
-    Args:
-        phone: Raw phone number input
-        field_name: Name of field for error messages
-
-    Returns:
-        E.164 formatted phone number
-
-    Raises:
-        ValueError: If phone number is invalid
+    Validate and normalize phone number
+    Returns normalized number or None if invalid
     """
-    if not phone or not phone.strip():
-        raise ValueError(f"{field_name} is required")
+    if not phone:
+        return None
+    
+    # Remove all non-numeric characters
+    digits = re.sub(r'\D', '', phone)
+    
+    # Check length (10 digits for US numbers, 11 if starts with 1)
+    if len(digits) == 11 and digits[0] == '1':
+        digits = digits[1:]  # Remove country code
+    
+    if len(digits) != 10:
+        return None
+    
+    # Format as standard US number
+    return f"{digits[0:3]}-{digits[3:6]}-{digits[6:10]}"
 
-    try:
-        e164, _ = normalize_us_number(phone.strip())
-        return e164
-    except ValueError as e:
-        raise ValueError(f"Invalid {field_name}: {str(e)}")
-
-
-def generate_idempotency_key(
-    patient_alias: str,
-    doctor_name: str,
-    doctor_phone: str,
-    workflow_type: str = "POC_SIGNATURE",
-    date_str: Optional[str] = None
-) -> str:
+def generate_idempotency_key(data: Dict[str, Any]) -> str:
     """
-    Generate SHA256 hash for idempotency key.
-
-    Args:
-        patient_alias: Patient identifier/alias
-        doctor_name: Doctor's name
-        doctor_phone: Doctor's phone (E.164 format preferred)
-        workflow_type: Type of workflow
-        date_str: Date string (defaults to today's date)
-
-    Returns:
-        64-character SHA256 hex digest
+    Generate idempotency key for task deduplication
+    Based on: patient_name + doctor_name + date_sent + workflow_type
     """
-    if date_str is None:
-        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+    key_parts = [
+        data.get('patient_name', '').lower().strip(),
+        data.get('doctor_name', '').lower().strip(),
+        data.get('date_sent', '').strip(),
+        data.get('workflow_type', 'poc_followup').lower()
+    ]
+    
+    key_string = "|".join(key_parts)
+    return hashlib.sha256(key_string.encode()).hexdigest()
 
-    key_data = f"{patient_alias.lower()}|{doctor_name.lower()}|{doctor_phone}|{workflow_type.lower()}|{date_str}"
-    return hashlib.sha256(key_data.encode()).hexdigest()
-
-
-def validate_task_data(data: Dict[str, Any]) -> Tuple[Dict[str, Any], list]:
+def validate_task_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Validate task creation data.
-
-    Args:
-        data: Dictionary containing task data
-
-    Returns:
-        Tuple of (validated_data, errors)
-        - validated_data: Cleaned and validated data dict
-        - errors: List of validation error messages
+    Validate and clean task data
+    Returns cleaned data or raises ValueError
     """
     errors = []
-    validated = {}
-
+    
     # Required fields
-    required_fields = ['patient_alias', 'doctor_name', 'doctor_phone', 'therapist_phone']
-
+    required_fields = ['patient_name', 'doctor_name', 'doctor_phone', 'therapist_phone']
     for field in required_fields:
-        value = data.get(field, '').strip() if data.get(field) else ''
-        if not value:
-            errors.append(f"{field} is required")
-        else:
-            validated[field] = value
-
+        if not data.get(field):
+            errors.append(f"Missing required field: {field}")
+    
     # Validate phone numbers
-    if 'doctor_phone' in validated:
-        try:
-            validated['doctor_phone'] = validate_phone_number(validated['doctor_phone'], 'doctor_phone')
-        except ValueError as e:
-            errors.append(str(e))
-
-    if 'therapist_phone' in validated:
-        try:
-            validated['therapist_phone'] = validate_phone_number(validated['therapist_phone'], 'therapist_phone')
-        except ValueError as e:
-            errors.append(str(e))
-
-    # Optional fields
-    if data.get('workflow_type'):
-        validated['workflow_type'] = data['workflow_type'].strip()
+    doctor_phone = validate_phone_number(data.get('doctor_phone', ''))
+    if not doctor_phone:
+        errors.append("Invalid doctor phone number")
     else:
-        validated['workflow_type'] = 'POC_SIGNATURE'
-
-    if data.get('notes'):
-        validated['notes'] = data['notes'].strip()
-
-    return validated, errors
+        data['doctor_phone'] = doctor_phone
+    
+    therapist_phone = validate_phone_number(data.get('therapist_phone', ''))
+    if not therapist_phone:
+        errors.append("Invalid therapist phone number")
+    else:
+        data['therapist_phone'] = therapist_phone
+    
+    # Validate fax if provided
+    if data.get('fax_number'):
+        fax_number = validate_phone_number(data['fax_number'])
+        if fax_number:
+            data['fax_number'] = fax_number
+    
+    # Clean names
+    if 'patient_name' in data:
+        data['patient_name'] = data['patient_name'].strip()
+    if 'doctor_name' in data:
+        data['doctor_name'] = data['doctor_name'].strip()
+    
+    if errors:
+        raise ValueError("; ".join(errors))
+    
+    return data

@@ -295,7 +295,7 @@ class ContactRepository:
     
     async def search_contacts(self, q: Optional[str] = None, limit: int = 10) -> List["Contact"]:
         """Search contacts by doctor name or office name"""
-        from .models_multitenant import Contact
+        from .models_v2 import Contact
         query = select(Contact)
         
         if q:
@@ -314,14 +314,14 @@ class ContactRepository:
     
     async def get_by_id(self, contact_id: uuid.UUID) -> Optional["Contact"]:
         """Get contact by ID"""
-        from .models_multitenant import Contact
+        from .models_v2 import Contact
         query = select(Contact).where(Contact.id == contact_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
     
     async def create_contact(self, data: Dict[str, Any]) -> "Contact":
         """Create new contact"""
-        from .models_multitenant import Contact
+        from .models_v2 import Contact
         contact = Contact(**data)
         self.session.add(contact)
         await self.session.commit()
@@ -349,7 +349,7 @@ class ContactRepository:
     
     async def verify_field(self, contact_id: uuid.UUID, field: str) -> bool:
         """Update last_verified_at for a contact"""
-        from .models_multitenant import Contact
+        from .models_v2 import Contact
         if field not in ['phone', 'fax']:
             return False
         
