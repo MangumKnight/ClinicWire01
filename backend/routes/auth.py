@@ -61,34 +61,47 @@ class PasswordLoginResponse(BaseModel):
     organizations: list[dict]
 
 # Endpoints
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login", response_model=LoginResponse, status_code=status.HTTP_202_ACCEPTED)
 async def login(
     request: LoginRequest,
     req: Request,
     session: AsyncSession = Depends(get_session)
 ):
     """Send magic link to email"""
-    
+
     # Generate auth code
     code = await MagicLinkHandler.create_auth_code(
         request.email,
         session,
         req.client.host if req.client else None
     )
-    
+
     # Send magic link
-    success = await MagicLinkHandler.send_magic_link(
+    success, send_status = await MagicLinkHandler.send_magic_link(
         request.email,
         code,
         request.org_slug
     )
-    
+
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send login email"
+        if send_status == "smtp_not_configured":
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Email service unavailable"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send login email"
+            )
+
+    # Return appropriate message based on mode
+    if send_status == "dev_mode":
+        return LoginResponse(
+            message="Development mode: check server console for login link",
+            email=request.email
         )
-    
+
     return LoginResponse(
         message="Check your email for login link",
         email=request.email
