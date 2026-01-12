@@ -1,0 +1,54 @@
+.vercel
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+webhook.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# Node (for MCP bridge)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Distribution
+dist/
+build/
+
+# Sensitive
+*.pem
+*.key
+*.cert
+.env_backup*
+server.log
+*.pyc

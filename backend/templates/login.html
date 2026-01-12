@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClinicWire - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #0a0a0a;
+            color: #e4e4e7;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 2rem;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .logo {
+            height: 48px;
+            width: auto;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-card {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: #f4f4f5;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #71717a;
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #a1a1aa;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #09090b;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            color: #f4f4f5;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder {
+            color: #52525b;
+        }
+
+        .error-message {
+            display: none;
+            background: #991b1b;
+            color: #fef2f2;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 0.875rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-button:hover:not(:disabled) {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .submit-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .submit-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .submit-button.loading {
+            color: transparent;
+        }
+
+        .submit-button.loading::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spinner 0.8s linear infinite;
+        }
+
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+
+        .divider {
+            position: relative;
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .divider::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: #27272a;
+        }
+
+        .divider span {
+            position: relative;
+            padding: 0 1rem;
+            background: #18181b;
+            color: #71717a;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .demo-info {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .demo-info h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .demo-info p {
+            font-size: 0.8125rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .info-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 1rem;
+            }
+
+            .login-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-container">
+            <img src="/static/clinicwire-logo.svg" alt="ClinicWire" class="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div style="display:none; font-size: 2rem; font-weight: bold; color: #3b82f6;">ClinicWire</div>
+        </div>
+
+        <div class="login-card">
+            <h1>Welcome back</h1>
+            <p class="subtitle">Sign in to your account</p>
+
+            <div class="error-message" id="errorMessage"></div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="email">Email address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="demo@clinicwire.com"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter your password"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" class="submit-button" id="submitButton">
+                    Sign in
+                </button>
+            </form>
+
+            <div class="demo-info">
+                <h3>
+                    <svg class="info-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                    Demo Account
+                </h3>
+                <p>
+                    Use <strong>demo@clinicwire.com</strong> with password <strong>ClinicWireDemo</strong> to explore the platform.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const submitButton = document.getElementById('submitButton');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Get form data
+            const email = form.email.value;
+            const password = form.password.value;
+            
+            // Reset error state
+            errorMessage.classList.remove('show');
+            errorMessage.textContent = '';
+            
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.classList.add('loading');
+            submitButton.textContent = 'Signing in...';
+            
+            try {
+                // Call the password login endpoint
+                const response = await fetch('/api/auth/login-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Login failed');
+                }
+                
+                // Store the token
+                localStorage.setItem('clinicwire_token', data.token);
+                localStorage.setItem('clinicwire_user', JSON.stringify(data.user));
+                localStorage.setItem('clinicwire_organizations', JSON.stringify(data.organizations));
+                
+                // Set demo mode flag
+                if (data.is_demo) {
+                    localStorage.setItem('clinicwire_demo_mode', 'true');
+                }
+                
+                // Redirect to the calling interface
+                window.location.href = '/poc-calling-mcp.html';
+                
+            } catch (error) {
+                // Show error message
+                errorMessage.textContent = error.message || 'An error occurred. Please try again.';
+                errorMessage.classList.add('show');
+                
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.classList.remove('loading');
+                submitButton.textContent = 'Sign in';
+                
+                // Focus back to email field if it's empty
+                if (!form.email.value) {
+                    form.email.focus();
+                }
+            }
+        }
+        
+        // Auto-focus email field on load
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('email').focus();
+        });
+    </script>
+</body>
+</html>

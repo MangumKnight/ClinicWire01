@@ -1,0 +1,26 @@
+{
+  "name": "clinicwire",
+  "version": "1.0.0",
+  "description": "Automated POC calling system with voice synthesis",
+  "scripts": {
+    "dev:backend": "cd backend && python main.py",
+    "dev:frontend": "cd frontend/legacy && python -m http.server 8002",
+    "dev:all": "concurrently -n backend,frontend -c blue,yellow \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "db:migrate": "cd backend && alembic upgrade head",
+    "test:backend": "cd tests && python test_reliability_harness.py",
+    "verify": "bash scripts/verify.sh"
+  },
+  "keywords": [
+    "clinicwire",
+    "poc",
+    "twilio",
+    "elevenlabs",
+    "voice",
+    "healthcare"
+  ],
+  "author": "ClinicWire Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
