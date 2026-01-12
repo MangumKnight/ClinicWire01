@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClinicWire - Call Automation Portal</title>
+    <script src="/static/auth.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        /* Header with Purple Gradient */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* MCP Configuration Section */
+        .config-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .config-input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .config-input-group input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .config-input-group button {
+            padding: 0.75rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .config-input-group button:hover {
+            background: #5a67d8;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .status-connected {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-disconnected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Status Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Control Buttons */
+        .controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #38a169;
+        }
+
+        .btn-refresh {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-refresh:hover {
+            background: #3182ce;
+        }
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+        .bulk-actions {
+            margin: 1rem 0;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .task-checkbox {
+            transform: scale(1.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-section select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* Data Table */
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f7fafc;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #4a5568;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .checkbox-cell {
+            width: 40px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-calling {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-queued {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .status-resolved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error Messages */
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        /* Success Messages */
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        /* Contact Search Dropdown */
+        .contact-search-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        #contactSearch {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        #contactResults {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 1000;
+        }
+
+        .contact-result-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .contact-result-item:hover {
+            background: #f3f4f6;
+        }
+
+        .contact-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .contact-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Edit Contact Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-header {
+            margin-bottom: 1rem;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .modal-body {
+            margin-bottom: 1rem;
+        }
+
+        .modal-body .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .modal-body label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+
+        .modal-body input,
+        .modal-body textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>ClinicWire - Call Automation Portal</h1>
+        <p>Automated calling system for medical office POC verification</p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Task Creation Form -->
+        <div class="config-section">
+            <h2 style="margin-bottom: 1rem;">Create New Task</h2>
+            
+            <!-- Contact Search -->
+            <div class="contact-search-container">
+                <input type="text" id="contactSearch" placeholder="Search saved contacts...">
+                <div id="contactResults"></div>
+            </div>
+            
+            <form id="taskCreationForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <label for="patient_alias" style="display: block; margin-bottom: 0.5rem;">Patient Alias *</label>
+                    <input type="text" id="patient_alias" name="patient_alias" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div>
+                    <label for="doctor_name" style="display: block; margin-bottom: 0.5rem;">Doctor Name *</label>
+                    <input type="text" id="doctor_name" name="doctor_name" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div>
+                    <label for="doctor_phone" style="display: block; margin-bottom: 0.5rem;">Doctor's Phone Number *</label>
+                    <input type="tel" id="doctor_phone" name="doctor_phone" placeholder="(919) 555-1234" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <small style="color: #666;">Who gets called</small>
+                </div>
+                <div>
+                    <label for="therapist_phone" style="display: block; margin-bottom: 0.5rem;">Therapist Phone *</label>
+                    <input type="tel" id="therapist_phone" name="therapist_phone" placeholder="(919) 555-5678" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <small style="color: #666;">Who gets SMS updates</small>
+                </div>
+                <!-- Hidden workflow type field -->
+                <input type="hidden" id="workflow_type" name="workflow_type" value="POC_SIGNATURE">
+                <div style="grid-column: 1 / -1;">
+                    <label for="fax_number" style="display: block; margin-bottom: 0.5rem;">Fax Number</label>
+                    <input type="tel" id="fax_number" name="fax_number" placeholder="(919) 555-0000" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label for="office_name" style="display: block; margin-bottom: 0.5rem;">Office Name</label>
+                    <input type="text" id="office_name" name="office_name" placeholder="Riverside Clinic" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Create Task</button>
+                    <div class="contact-actions">
+                        <button type="button" id="btnSaveContact" class="btn btn-secondary">Save as New Contact</button>
+                        <button type="button" id="btnEditContact" class="btn btn-secondary" disabled>Edit Contact</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- MCP Server Configuration (Hidden) -->
+        <!-- 
+        <div class="config-section">
+            <h2 style="margin-bottom: 1rem;">MCP Server Configuration</h2>
+            <div class="config-input-group">
+                <input type="text" id="mcpUrl" placeholder="MCP Server URL (e.g., http://localhost:8000)" value="http://localhost:8000">
+                <input type="password" id="mcpToken" placeholder="MCP Auth Token (optional)">
+                <button onclick="saveConfig()">Save Configuration</button>
+            </div>
+            <div class="config-input-group">
+                <span class="status-indicator status-disconnected" id="connectionStatus">
+                    ⚪ Not Connected
+                </span>
+                <button class="btn btn-primary" onclick="testConnection()">Test Connection</button>
+            </div>
+            <small style="color: #666; display: block; margin-top: 0.5rem;">
+                Your configuration is stored locally and used to communicate with the MCP server
+            </small>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3 id="totalCount">0</h3>
+                <p>Total POCs</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="pendingCount">0</h3>
+                <p>Pending Calls</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="completedCount">0</h3>
+                <p>Completed Today</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="errorCount">0</h3>
+                <p>Errors</p>
+            </div>
+        </div>
+        -->
+
+        <!-- Error/Success Messages -->
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn btn-primary" onclick="callSelected()" id="callSelectedBtn" disabled>
+                📞 Call Selected
+            </button>
+            <button class="btn btn-secondary" onclick="callAllPending()" id="callAllBtn" disabled>
+                📞 Call All Pending
+            </button>
+            <button class="btn btn-refresh" onclick="loadTasks(); updateTaskTable()">
+                🔄 Refresh Data
+            </button>
+            
+            <div class="filter-section">
+                <label>Filter by status:</label>
+                <select id="statusFilter" onchange="filterTable()">
+                    <option value="all">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="queued">Queued</option>
+                    <option value="calling">Calling</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="failed">Failed</option>
+                    <option value="error">Errors</option>
+                </select>
+            </div>
+
+            <div class="bulk-actions">
+                <button class="btn btn-danger" onclick="deleteSelectedTasks()">🗑️ Delete Selected</button>
+                <button class="btn btn-primary" onclick="callSelectedTasks()">📞 Call Selected</button>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-container">
+            <table id="pocTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                        <th>Task ID</th>
+                        <th>Doctor Name</th>
+                        <th>Doctor Phone</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2rem;">
+                            No tasks created yet. Use the form above to create your first task.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading">
+        <div class="spinner"></div>
+        <p id="loadingText">Processing...</p>
+    </div>
+
+    <script>
+        // Configuration
+        // Check authentication on page load
+        if (!window.authManager.requireAuth()) {
+            // User will be redirected to login
+        }
+        
+        let CONFIG = {
+            mcpBaseUrl: 'http://localhost:8001',
+            mcpAuthToken: '',
+            googleScriptUrl: 'https://script.google.com/macros/s/AKfycbzPaccJs2uN8lwAsJwBstDHTWbbJscW8yo3Ecod8gbKJV3lGk0FseeP-J8ddks0xbY/exec'
+        };
+
+        // Global state
+        let pocData = [];
+        let taskData = [];
+        let currentFilter = 'all';
+        let isProcessingBatch = false;
+        let isConnected = false;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved configuration (keeping URL config for functionality)
+            const savedUrl = localStorage.getItem('mcpBaseUrl');
+            const savedToken = localStorage.getItem('mcpAuthToken');
+            
+            if (savedUrl) {
+                CONFIG.mcpBaseUrl = savedUrl;
+            }
+            
+            if (savedToken) {
+                CONFIG.mcpAuthToken = savedToken;
+            }
+            
+            // Add form submit handler
+            document.getElementById('taskCreationForm').addEventListener('submit', handleTaskCreation);
+            
+            // Load tasks on startup
+            loadTasks();
+        });
+
+        // Save MCP Configuration
+        function saveConfig() {
+            const url = document.getElementById('mcpUrl').value.trim();
+            const token = document.getElementById('mcpToken').value.trim();
+            
+            if (!url) {
+                showError('Please enter a valid MCP server URL');
+                return;
+            }
+            
+            // Remove trailing slash
+            CONFIG.mcpBaseUrl = url.replace(/\/$/, '');
+            CONFIG.mcpAuthToken = token;
+            
+            localStorage.setItem('mcpBaseUrl', CONFIG.mcpBaseUrl);
+            localStorage.setItem('mcpAuthToken', CONFIG.mcpAuthToken);
+            
+            showSuccess('Configuration saved successfully!');
+            testConnection();
+        }
+
+        // Test MCP Connection
+        async function testConnection() {
+            showLoading('Testing connection...');
+            
+            try {
+                const response = await fetch(`${CONFIG.mcpBaseUrl}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    isConnected = true;
+                    updateConnectionStatus(true, data);
+                    enableCallButtons();
+                    showSuccess('Connected to MCP server successfully!');
+                    
+                    // Auto-load tasks after successful connection
+                    loadTasks();
+                } else {
+                    throw new Error('Server returned not OK');
+                }
+            } catch (error) {
+                console.error('Connection test failed:', error);
+                isConnected = false;
+                updateConnectionStatus(false);
+                showError('Failed to connect to MCP server: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(connected, healthData = null) {
+            const statusEl = document.getElementById('connectionStatus');
+            
+            if (connected) {
+                statusEl.className = 'status-indicator status-connected';
+                let statusText = '🟢 Connected';
+                if (healthData && healthData.environment) {
+                    statusText += ` (${healthData.environment.simulate === 'true' ? 'Simulation' : 'Live'} Mode)`;
+                }
+                statusEl.textContent = statusText;
+            } else {
+                statusEl.className = 'status-indicator status-disconnected';
+                statusEl.textContent = '🔴 Not Connected';
+            }
+        }
+
+        // Enable/disable call buttons based on connection
+        function enableCallButtons() {
+            const hasConnection = isConnected;
+            document.getElementById('callSelectedBtn').disabled = !hasConnection;
+            document.getElementById('callAllBtn').disabled = !hasConnection;
+        }
+
+        // Load data from Google Sheets (via legacy endpoint for now)
+        async function loadSheetData() {
+            if (!isConnected) {
+                showError('Please connect to MCP server first');
+                return;
+            }
+            
+            showLoading('Loading POC data...');
+            
+            try {
+                const response = await fetch(CONFIG.googleScriptUrl + '?action=getPOCs');
+                const result = await response.json();
+                
+                if (result.success) {
+                    pocData = result.data || [];
+                    updateTable();
+                    updateStats();
+                    showSuccess(`Loaded ${pocData.length} POC records`);
+                } else {
+                    showError('Failed to load data: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Failed to load POC data: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Update the table with POC data
+        function updateTable() {
+            const tbody = document.getElementById('tableBody');
+            const filteredData = filterData();
+            
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 2rem;">No records found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = filteredData.map((poc, index) => {
+                // Map old status to new status if needed
+                let status = poc.status || 'pending';
+                if (status === 'completed') status = 'resolved';
+                
+                return `
+                    <tr>
+                        <td class="checkbox-cell">
+                            <input type="checkbox" class="poc-checkbox" data-index="${index}" 
+                                   ${status !== 'pending' ? 'disabled' : ''}>
+                        </td>
+                        <td>${escapeHtml(poc.patient_name || '')}</td>
+                        <td>${escapeHtml(poc.doctor_name || '')}</td>
+                        <td>${formatPhone(poc.office_phone || poc.doctor_phone || '')}</td>
+                        <td>${poc.date_sent || ''}</td>
+                        <td>${poc.fax_number || ''}</td>
+                        <td><span class="status-badge status-${status}">${status}</span></td>
+                        <td>${poc.last_call_date || poc.last_updated || '-'}</td>
+                        <td>${poc.call_duration || '-'}</td>
+                        <td>${poc.call_outcome || poc.notes || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Filter data based on selected status
+        function filterData() {
+            if (currentFilter === 'all') return pocData;
+            
+            // Map filter values to match data
+            let filterStatus = currentFilter;
+            if (currentFilter === 'resolved') {
+                return pocData.filter(poc => 
+                    poc.status === 'resolved' || poc.status === 'completed' || poc.status === 'RESOLVED'
+                );
+            }
+            
+            return pocData.filter(poc => (poc.status || 'pending').toLowerCase() === filterStatus);
+        }
+
+        // Filter table
+        function filterTable() {
+            currentFilter = document.getElementById('statusFilter').value;
+            updateTaskTable();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const stats = {
+                total: pocData.length,
+                pending: pocData.filter(p => !p.status || p.status === 'pending').length,
+                completed: pocData.filter(p => 
+                    (p.status === 'completed' || p.status === 'resolved' || p.status === 'RESOLVED') && 
+                    isToday(p.last_call_date || p.last_updated)
+                ).length,
+                error: pocData.filter(p => 
+                    p.status === 'error' || p.status === 'failed' || p.status === 'ERROR' || p.status === 'FAILED'
+                ).length
+            };
+            
+            document.getElementById('totalCount').textContent = stats.total;
+            document.getElementById('pendingCount').textContent = stats.pending;
+            document.getElementById('completedCount').textContent = stats.completed;
+            document.getElementById('errorCount').textContent = stats.error;
+        }
+
+        // Toggle select all checkboxes
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll').checked;
+            const checkboxes = document.querySelectorAll('.poc-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = selectAll);
+        }
+
+        // Call selected POCs
+        async function callSelected() {
+            const selectedIndices = Array.from(document.querySelectorAll('.poc-checkbox:checked'))
+                .map(cb => parseInt(cb.dataset.index));
+            
+            if (selectedIndices.length === 0) {
+                showError('Please select at least one POC to call');
+                return;
+            }
+            
+            const selectedPocs = selectedIndices.map(i => pocData[i]);
+            await processBatch(selectedPocs);
+        }
+
+        // Call all pending POCs
+        async function callAllPending() {
+            const pendingPocs = pocData.filter(p => !p.status || p.status === 'pending');
+            
+            if (pendingPocs.length === 0) {
+                showError('No pending POCs to call');
+                return;
+            }
+            
+            const confirm = window.confirm(`This will call ${pendingPocs.length} pending POCs. Continue?`);
+            if (!confirm) return;
+            
+            await processBatch(pendingPocs);
+        }
+
+        // Process a batch of calls
+        async function processBatch(pocs) {
+            if (isProcessingBatch) {
+                showError('Already processing calls. Please wait.');
+                return;
+            }
+            
+            // Prompt for therapist phone number
+            const therapistPhone = prompt('Enter therapist phone number for SMS updates:');
+            if (!therapistPhone) {
+                showError('Therapist phone number is required for SMS updates');
+                return;
+            }
+            
+            isProcessingBatch = true;
+            disableControls();
+            
+            for (let i = 0; i < pocs.length; i++) {
+                const poc = pocs[i];
+                showLoading(`Creating task ${i + 1} of ${pocs.length}: ${poc.patient_name}`);
+                
+                try {
+                    await createTask(poc, therapistPhone);
+                    
+                    // Update local data
+                    const index = pocData.findIndex(p => 
+                        p.patient_name === poc.patient_name && 
+                        p.doctor_name === poc.doctor_name
+                    );
+                    if (index !== -1) {
+                        pocData[index].status = 'queued';
+                        pocData[index].last_updated = new Date().toISOString();
+                    }
+                    
+                    updateTable();
+                    updateStats();
+                    
+                    // Small delay between requests
+                    if (i < pocs.length - 1) {
+                        await sleep(1000);
+                    }
+                    
+                } catch (error) {
+                    console.error('Task creation failed:', error);
+                    
+                    // Update status to error
+                    const index = pocData.findIndex(p => 
+                        p.patient_name === poc.patient_name && 
+                        p.doctor_name === poc.doctor_name
+                    );
+                    if (index !== -1) {
+                        pocData[index].status = 'error';
+                        pocData[index].notes = error.message;
+                    }
+                    
+                    updateTable();
+                    updateStats();
+                }
+            }
+            
+            isProcessingBatch = false;
+            enableControls();
+            hideLoading();
+            showSuccess(`Created ${pocs.length} calling tasks. You will receive SMS updates as calls complete.`);
+            
+            // Refresh data after a delay
+            setTimeout(loadSheetData, 5000);
+        }
+
+        // Create a single task via MCP
+        async function createTask(poc, therapistPhone) {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (CONFIG.mcpAuthToken) {
+                headers['Authorization'] = `Bearer ${CONFIG.mcpAuthToken}`;
+            }
+            
+            const payload = {
+                patient_name: poc.patient_name || 'Unknown Patient',
+                patient_dob: poc.patient_dob || '01/01/1970',
+                doctor_name: poc.doctor_name || 'Unknown Doctor',
+                doctor_phone: poc.office_phone || poc.doctor_phone || '',
+                date_sent: poc.date_sent || 'recently',
+                fax_number: poc.fax_number || 'on file',
+                therapist_phone: therapistPhone,
+                workflow_type: 'poc_followup'
+            };
+            
+            const response = await fetch(`${CONFIG.mcpBaseUrl}/tasks`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Task creation failed: ${errorText}`);
+            }
+            
+            const result = await response.json();
+            console.log('Task created:', result);
+            return result;
+        }
+
+        // Utility functions
+        function formatPhone(phone) {
+            if (!phone) return '';
+            const cleaned = phone.toString().replace(/\D/g, '');
+            if (cleaned.length === 10) {
+                return `(${cleaned.substr(0, 3)}) ${cleaned.substr(3, 3)}-${cleaned.substr(6)}`;
+            }
+            return phone;
+        }
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function isToday(dateStr) {
+            if (!dateStr) return false;
+            const date = new Date(dateStr);
+            const today = new Date();
+            return date.toDateString() === today.toDateString();
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // UI control functions
+        function showLoading(text) {
+            document.getElementById('loadingOverlay').style.display = 'block';
+            document.getElementById('loadingText').textContent = text || 'Processing...';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            setTimeout(() => successDiv.style.display = 'none', 5000);
+        }
+
+        function disableControls() {
+            document.getElementById('callSelectedBtn').disabled = true;
+            document.getElementById('callAllBtn').disabled = true;
+            document.getElementById('selectAll').disabled = true;
+            document.querySelectorAll('.poc-checkbox').forEach(cb => cb.disabled = true);
+        }
+
+        function enableControls() {
+            enableCallButtons();
+            document.getElementById('selectAll').disabled = false;
+            document.querySelectorAll('.poc-checkbox').forEach(cb => {
+                const index = parseInt(cb.dataset.index);
+                const poc = pocData[index];
+                cb.disabled = poc.status !== 'pending';
+            });
+        }
+        
+        // New functions for integrated workflow
+        
+        // Handle task creation form submission
+        async function handleTaskCreation(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating...';
+            
+            const data = {
+                workflow_type: form.workflow_type.value,
+                patient_alias: form.patient_alias.value,
+                doctor_name: form.doctor_name.value,
+                doctor_phone: form.doctor_phone.value,
+                therapist_phone: form.therapist_phone.value
+            };
+            
+            try {
+                const response = await window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/tasks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showSuccess(`Task created successfully! Task ID: ${result.task_id}`);
+                    form.reset();
+                    await loadTasks(); // Reload task list
+                } else {
+                    showError(`Error: ${result.detail || 'Unknown error'}`);
+                }
+            } catch (error) {
+                showError(`Connection error: ${error.message}`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Task';
+            }
+        }
+        
+        // Load tasks from MCP server
+        async function loadTasks() {
+            try {
+                const response = await window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/tasks`);
+                const data = await response.json();
+                
+                if (response.ok && data.tasks) {
+                    taskData = data.tasks;
+                    updateTaskTable();
+                }
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+        
+        // Update task table with current data
+        function updateTaskTable() {
+            const tbody = document.getElementById('tableBody');
+            
+            // Filter taskData based on currentFilter
+            let filteredTasks = taskData;
+            if (currentFilter !== 'all') {
+                filteredTasks = taskData.filter(task => 
+                    task.status.toLowerCase() === currentFilter.toLowerCase()
+                );
+            }
+            
+            if (filteredTasks.length === 0) {
+                const message = taskData.length === 0 ? 
+                    'No tasks created yet. Use the form above to create your first task.' :
+                    'No records found';
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">${message}</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = filteredTasks.map(task => `
+                <tr>
+                    <td><input type="checkbox" class="task-checkbox" data-task-id="${task.task_id}"></td>
+                    <td>${task.task_id.substring(0, 8)}...</td>
+                    <td>${escapeHtml(task.doctor_name)}</td>
+                    <td>${formatPhone(task.doctor_phone || 'N/A')}</td>
+                    <td><span class="status-badge status-${task.status.toLowerCase()}">${task.status}</span></td>
+                    <td>${formatTimestamp(task.created_at)}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="executeCallNow('${task.task_id}')" 
+                            ${task.status === 'CALLING' ? 'disabled' : ''}>
+                            Call Now
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Execute call immediately for a specific task
+        async function executeCallNow(taskId) {
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = 'Calling...';
+            
+            try {
+                const response = await window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/tasks/${taskId}/call`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showSuccess('Call initiated successfully!');
+                    loadTasks(); // Refresh the task list
+                } else {
+                    showError(`Call failed: ${result.detail || result.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                showError(`Connection error: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Call Now';
+            }
+        }
+
+        // Checkbox and bulk actions
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.task-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        function getSelectedTaskIds() {
+            return Array.from(document.querySelectorAll('.task-checkbox:checked'))
+                .map(checkbox => checkbox.dataset.taskId);
+        }
+
+        async function deleteSelectedTasks() {
+            const selectedIds = getSelectedTaskIds();
+            
+            if (selectedIds.length === 0) {
+                showError('Please select at least one task to delete');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${selectedIds.length} task(s)?`)) {
+                return;
+            }
+
+            try {
+                // Delete tasks individually since bulk endpoint has issues
+                let deletedCount = 0;
+                for (const taskId of selectedIds) {
+                    const response = await window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/tasks/${taskId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        deletedCount++;
+                    }
+                }
+
+                showSuccess(`Deleted ${deletedCount} task(s) successfully`);
+                await loadTasks(); // Refresh the task list
+                updateTaskTable();
+                
+                // Reset select all checkbox
+                document.getElementById('selectAll').checked = false;
+
+            } catch (error) {
+                showError(`Delete error: ${error.message}`);
+            }
+        }
+
+        async function callSelectedTasks() {
+            const selectedIds = getSelectedTaskIds();
+            
+            if (selectedIds.length === 0) {
+                showError('Please select at least one task to call');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to initiate calls for ${selectedIds.length} task(s)?`)) {
+                return;
+            }
+
+            try {
+                let calledCount = 0;
+                for (const taskId of selectedIds) {
+                    const response = await fetch(`${CONFIG.mcpBaseUrl}/tasks/${taskId}/call`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        calledCount++;
+                    }
+                }
+
+                showSuccess(`Initiated calls for ${calledCount} task(s) successfully`);
+                await loadTasks(); // Refresh the task list
+                updateTaskTable();
+
+                // Reset select all checkbox
+                document.getElementById('selectAll').checked = false;
+
+            } catch (error) {
+                showError(`Call error: ${error.message}`);
+            }
+        }
+
+        // Contact Management Functions
+        let contactsCache = [];
+        let selectedContact = null;
+        let contactSearchTimeout = null;
+
+        // Search contacts with debounce
+        document.getElementById('contactSearch').addEventListener('input', (e) => {
+            clearTimeout(contactSearchTimeout);
+            contactSearchTimeout = setTimeout(() => {
+                searchContacts(e.target.value);
+            }, 200);
+        });
+
+        // Save new contact button
+        document.getElementById('btnSaveContact').addEventListener('click', saveNewContactFromForm);
+
+        // Edit contact button
+        document.getElementById('btnEditContact').addEventListener('click', openEditContactModal);
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.contact-search-container')) {
+                document.getElementById('contactResults').style.display = 'none';
+            }
+        });
+
+        async function searchContacts(q) {
+            try {
+                const url = new URL(`${CONFIG.mcpBaseUrl}/api/contacts`);
+                if (q) url.searchParams.append('q', q);
+                
+                const response = await window.authManager.makeAuthenticatedRequest(url);
+                if (response.ok) {
+                    const data = await response.json();
+                    contactsCache = data.items || [];
+                    renderContactResults(contactsCache);
+                }
+            } catch (error) {
+                console.error('Error searching contacts:', error);
+            }
+        }
+
+        function renderContactResults(items) {
+            const resultsDiv = document.getElementById('contactResults');
+            
+            if (!items || items.length === 0) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+
+            resultsDiv.innerHTML = items.map(item => `
+                <div class="contact-result-item">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1; cursor: pointer;" onclick='onSelectContact(${JSON.stringify(item).replace(/'/g, "\\'")})'>
+                            <strong>${item.patient_alias ? escapeHtml(item.patient_alias) + ' - ' : ''}${escapeHtml(item.doctor_name)}</strong>
+                            ${item.office_name ? ` - ${escapeHtml(item.office_name)}` : ''}
+                            <br>
+                            <small style="color: #666;">
+                                ${item.phone_e164 ? formatPhone(item.phone_e164) : 'No phone'}
+                                ${item.fax_e164 ? ` | Fax: ${formatPhone(item.fax_e164)}` : ''}
+                            </small>
+                        </div>
+                        <div style="display: flex; gap: 0.25rem;">
+                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;" onclick='editExistingContact(${JSON.stringify(item).replace(/'/g, "\\'")}); event.stopPropagation();'>Edit</button>
+                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;" onclick='deleteContact("${item.id}"); event.stopPropagation();'>Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            resultsDiv.style.display = 'block';
+        }
+
+        function onSelectContact(item) {
+            selectedContact = item;
+            
+            // Fill form fields
+            document.getElementById('patient_alias').value = item.patient_alias || '';
+            document.getElementById('doctor_name').value = item.doctor_name || '';
+            document.getElementById('office_name').value = item.office_name || '';
+            document.getElementById('doctor_phone').value = item.phone_e164 || '';
+            document.getElementById('fax_number').value = item.fax_e164 || '';
+            
+            // Enable edit button
+            document.getElementById('btnEditContact').disabled = false;
+            
+            // Hide dropdown
+            document.getElementById('contactResults').style.display = 'none';
+            
+            // Clear search
+            document.getElementById('contactSearch').value = '';
+        }
+
+        async function saveNewContactFromForm() {
+            const button = document.getElementById('btnSaveContact');
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Saving...';
+
+            try {
+                const data = {
+                    patient_alias: document.getElementById('patient_alias').value,
+                    doctor_name: document.getElementById('doctor_name').value,
+                    office_name: document.getElementById('office_name').value,
+                    phone_raw: document.getElementById('doctor_phone').value,
+                    fax_raw: document.getElementById('fax_number').value
+                };
+
+                const response = await window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/api/contacts`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const contact = await response.json();
+                    selectedContact = contact;
+                    contactsCache.unshift(contact); // Add to cache
+                    document.getElementById('btnEditContact').disabled = false;
+                    showSuccess('Contact saved successfully!');
+                } else {
+                    const error = await response.json();
+                    showError(error.detail || 'Failed to save contact');
+                }
+            } catch (error) {
+                showError(`Error saving contact: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+
+        function openEditContactModal() {
+            if (!selectedContact) return;
+
+            document.getElementById('editContactId').value = selectedContact.id;
+            document.getElementById('editPatientAlias').value = selectedContact.patient_alias || '';
+            document.getElementById('editDoctorName').value = selectedContact.doctor_name || '';
+            document.getElementById('editOfficeName').value = selectedContact.office_name || '';
+            document.getElementById('editPhone').value = selectedContact.phone_e164 || '';
+            document.getElementById('editFax').value = selectedContact.fax_e164 || '';
+            document.getElementById('editNotes').value = selectedContact.notes || '';
+
+            document.getElementById('editContactModal').style.display = 'block';
+        }
+
+        function closeEditContactModal() {
+            document.getElementById('editContactModal').style.display = 'none';
+        }
+
+        async function updateExistingContact() {
+            const contactId = document.getElementById('editContactId').value;
+            const button = event.target;
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Updating...';
+
+            try {
+                const data = {
+                    patient_alias: document.getElementById('editPatientAlias').value,
+                    doctor_name: document.getElementById('editDoctorName').value,
+                    office_name: document.getElementById('editOfficeName').value,
+                    phone_raw: document.getElementById('editPhone').value,
+                    fax_raw: document.getElementById('editFax').value,
+                    notes: document.getElementById('editNotes').value
+                };
+
+                const response = await window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/api/contacts/${contactId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const contact = await response.json();
+                    selectedContact = contact;
+                    
+                    // Update form fields
+                    onSelectContact(contact);
+                    
+                    closeEditContactModal();
+                    showSuccess('Contact updated successfully!');
+                } else {
+                    const error = await response.json();
+                    showError(error.detail || 'Failed to update contact');
+                }
+            } catch (error) {
+                showError(`Error updating contact: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeEditContactModal();
+            }
+        });
+
+        // Close modal on background click
+        document.getElementById('editContactModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editContactModal') {
+                closeEditContactModal();
+            }
+        });
+
+        // Edit existing contact from dropdown
+        function editExistingContact(contact) {
+            selectedContact = contact;
+            openEditContactModal();
+        }
+
+        // Delete contact
+        async function deleteContact(contactId) {
+            if (!confirm('Are you sure you want to delete this contact?')) {
+                return;
+            }
+
+            try {
+                const response = await window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/api/contacts/${contactId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    // Remove from cache
+                    contactsCache = contactsCache.filter(c => c.id !== contactId);
+                    
+                    // Clear selection if this was selected
+                    if (selectedContact && selectedContact.id === contactId) {
+                        selectedContact = null;
+                        document.getElementById('btnEditContact').disabled = true;
+                    }
+                    
+                    // Re-render results if visible
+                    const resultsDiv = document.getElementById('contactResults');
+                    if (resultsDiv.style.display !== 'none') {
+                        renderContactResults(contactsCache);
+                    }
+                    
+                    showSuccess('Contact deleted successfully!');
+                } else {
+                    const error = await response.json();
+                    showError(error.detail || 'Failed to delete contact');
+                }
+            } catch (error) {
+                showError(`Error deleting contact: ${error.message}`);
+            }
+        }
+    </script>
+
+    <!-- Edit Contact Modal -->
+    <div id="editContactModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Contact</h3>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editContactId">
+                <div class="form-group">
+                    <label for="editPatientAlias">Patient Alias</label>
+                    <input type="text" id="editPatientAlias">
+                </div>
+                <div class="form-group">
+                    <label for="editDoctorName">Doctor Name *</label>
+                    <input type="text" id="editDoctorName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editOfficeName">Office Name</label>
+                    <input type="text" id="editOfficeName">
+                </div>
+                <div class="form-group">
+                    <label for="editPhone">Phone Number</label>
+                    <input type="tel" id="editPhone" placeholder="(919) 555-1234">
+                </div>
+                <div class="form-group">
+                    <label for="editFax">Fax Number</label>
+                    <input type="tel" id="editFax" placeholder="(919) 555-0000">
+                </div>
+                <div class="form-group">
+                    <label for="editNotes">Notes</label>
+                    <textarea id="editNotes" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditContactModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateExistingContact()">Update</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
