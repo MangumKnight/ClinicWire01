@@ -11,7 +11,7 @@ import os
 from dotenv import load_dotenv
 
 # Import our models
-from db.models_v2 import Base
+from db.models_multitenant import Base
 
 # Load environment variables
 load_dotenv()

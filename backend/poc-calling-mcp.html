@@ -451,6 +451,182 @@
             gap: 0.5rem;
             justify-content: flex-end;
         }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: #667eea;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Activity Timeline */
+        .activity-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+        }
+
+        .activity-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .activity-controls select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .timeline {
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 50px;
+            padding-bottom: 1.5rem;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-icon {
+            position: absolute;
+            left: 10px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .timeline-icon.task { background: #48bb78; }
+        .timeline-icon.call { background: #667eea; }
+        .timeline-icon.sms { background: #ed8936; }
+
+        .timeline-content {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .timeline-content.task { border-left-color: #48bb78; }
+        .timeline-content.call { border-left-color: #667eea; }
+        .timeline-content.sms { border-left-color: #ed8936; }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-type {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #667eea;
+        }
+
+        .timeline-type.task { color: #48bb78; }
+        .timeline-type.call { color: #667eea; }
+        .timeline-type.sms { color: #ed8936; }
+
+        .timeline-time {
+            font-size: 0.75rem;
+            color: #999;
+        }
+
+        .timeline-summary {
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        .timeline-details {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .load-more-btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #667eea;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .load-more-btn:hover {
+            background: #edf2f7;
+        }
+
+        .load-more-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .empty-timeline {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #999;
+        }
     </style>
 </head>
 <body>
@@ -555,6 +731,15 @@
         <div id="errorMessage" class="error-message"></div>
         <div id="successMessage" class="success-message"></div>
 
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="tasks" onclick="switchTab('tasks')">Tasks</button>
+            <button class="tab-btn" data-tab="activity" onclick="switchTab('activity')">Activity</button>
+        </div>
+
+        <!-- Tasks Tab Content -->
+        <div id="tasks-tab" class="tab-content active">
+
         <!-- Controls -->
         <div class="controls">
             <button class="btn btn-primary" onclick="callSelected()" id="callSelectedBtn" disabled>
@@ -609,6 +794,32 @@
                 </tbody>
             </table>
         </div>
+        </div><!-- End Tasks Tab -->
+
+        <!-- Activity Tab Content -->
+        <div id="activity-tab" class="tab-content">
+            <div class="activity-container">
+                <div class="activity-controls">
+                    <label>Filter by type:</label>
+                    <select id="activityTypeFilter" onchange="loadActivity()">
+                        <option value="">All Events</option>
+                        <option value="task">Tasks</option>
+                        <option value="call">Calls</option>
+                        <option value="sms">SMS</option>
+                    </select>
+                    <button class="btn btn-refresh" onclick="loadActivity()">Refresh</button>
+                </div>
+
+                <div id="activityTimeline" class="timeline">
+                    <div class="empty-timeline">Loading activity...</div>
+                </div>
+
+                <button id="loadMoreActivity" class="load-more-btn" style="display: none;" onclick="loadMoreActivity()">
+                    Load More
+                </button>
+            </div>
+        </div><!-- End Activity Tab -->
+
     </div>
 
     <!-- Loading Overlay -->
@@ -1528,6 +1739,163 @@
             } catch (error) {
                 showError(`Error deleting contact: ${error.message}`);
             }
+        }
+
+        // ==========================================
+        // Activity Tab Functions
+        // ==========================================
+
+        let activityData = [];
+        let activityNextCursor = null;
+        let activityHasMore = false;
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+            });
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `${tabName}-tab`);
+            });
+
+            // Load activity when switching to activity tab
+            if (tabName === 'activity' && activityData.length === 0) {
+                loadActivity();
+            }
+        }
+
+        // Load activity events from API
+        async function loadActivity(append = false) {
+            const timeline = document.getElementById('activityTimeline');
+            const loadMoreBtn = document.getElementById('loadMoreActivity');
+
+            if (!append) {
+                timeline.innerHTML = '<div class="empty-timeline">Loading activity...</div>';
+                activityNextCursor = null;
+            }
+
+            try {
+                const entityType = document.getElementById('activityTypeFilter').value;
+                let url = `${CONFIG.mcpBaseUrl}/api/activity?limit=20`;
+
+                if (entityType) {
+                    url += `&entity_type=${entityType}`;
+                }
+                if (activityNextCursor && append) {
+                    url += `&cursor=${activityNextCursor}`;
+                }
+
+                const response = await window.authManager.makeAuthenticatedRequest(url);
+
+                if (!response.ok) {
+                    throw new Error('Failed to load activity');
+                }
+
+                const data = await response.json();
+
+                if (append) {
+                    activityData = [...activityData, ...data.items];
+                } else {
+                    activityData = data.items;
+                }
+
+                activityNextCursor = data.next_cursor;
+                activityHasMore = data.has_more;
+
+                renderActivityTimeline();
+
+                // Show/hide load more button
+                loadMoreBtn.style.display = activityHasMore ? 'block' : 'none';
+
+            } catch (error) {
+                console.error('Error loading activity:', error);
+                if (!append) {
+                    timeline.innerHTML = '<div class="empty-timeline">Failed to load activity. Please try again.</div>';
+                }
+            }
+        }
+
+        // Load more activity (pagination)
+        async function loadMoreActivity() {
+            const loadMoreBtn = document.getElementById('loadMoreActivity');
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.textContent = 'Loading...';
+
+            await loadActivity(true);
+
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.textContent = 'Load More';
+        }
+
+        // Render activity timeline
+        function renderActivityTimeline() {
+            const timeline = document.getElementById('activityTimeline');
+
+            if (activityData.length === 0) {
+                timeline.innerHTML = '<div class="empty-timeline">No activity events yet.</div>';
+                return;
+            }
+
+            timeline.innerHTML = activityData.map(event => {
+                const entityType = event.entity_type || 'task';
+                const icon = getEventIcon(entityType);
+                const timeAgo = formatTimeAgo(event.created_at_utc);
+                const details = formatEventDetails(event.details);
+
+                return `
+                    <div class="timeline-item">
+                        <div class="timeline-icon ${entityType}">${icon}</div>
+                        <div class="timeline-content ${entityType}">
+                            <div class="timeline-header">
+                                <span class="timeline-type ${entityType}">${event.event_type.replace('.', ' ')}</span>
+                                <span class="timeline-time">${timeAgo}</span>
+                            </div>
+                            <div class="timeline-summary">${escapeHtml(event.summary_safe)}</div>
+                            ${details ? `<div class="timeline-details">${details}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Get icon for event type
+        function getEventIcon(entityType) {
+            switch(entityType) {
+                case 'task': return '✓';
+                case 'call': return '📞';
+                case 'sms': return '💬';
+                default: return '•';
+            }
+        }
+
+        // Format time ago
+        function formatTimeAgo(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Format event details
+        function formatEventDetails(details) {
+            if (!details) return '';
+
+            const parts = [];
+            if (details.workflow_type) parts.push(`Workflow: ${details.workflow_type}`);
+            if (details.mode) parts.push(`Mode: ${details.mode}`);
+            if (details.duration_sec) parts.push(`Duration: ${details.duration_sec}s`);
+            if (details.outcome) parts.push(`Outcome: ${details.outcome}`);
+
+            return parts.join(' • ');
         }
     </script>
 

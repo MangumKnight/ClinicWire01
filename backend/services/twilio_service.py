@@ -64,7 +64,9 @@ class TwilioService:
                 to=to_number
             )
             
-            logger.info(f"SMS sent successfully to {to_number}: {message_obj.sid}")
+            # Log with redacted phone (last 4 digits only)
+            redacted = f"***{to_number[-4:]}" if len(to_number) >= 4 else "***"
+            logger.info(f"SMS sent successfully to {redacted}: {message_obj.sid}")
             return message_obj.sid
             
         except TwilioRestException as e:
@@ -101,7 +103,9 @@ class TwilioService:
                 status_callback_method='POST'
             )
             
-            logger.info(f"Call initiated to {to_number}: {call.sid}")
+            # Log with redacted phone (last 4 digits only)
+            redacted = f"***{to_number[-4:]}" if len(to_number) >= 4 else "***"
+            logger.info(f"Call initiated to {redacted}: {call.sid}")
             return {
                 "call_sid": call.sid,
                 "status": call.status,

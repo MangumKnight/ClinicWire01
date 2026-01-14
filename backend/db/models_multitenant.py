@@ -458,3 +458,73 @@ class Contact(Base):
     __table_args__ = (
         Index('idx_contacts_org_doctor_office', 'org_id', func.lower(doctor_name), func.lower(office_name)),
     )
+
+
+class ActivityLog(Base):
+    """
+    Unified activity log for all events in the system.
+    Provides a single timeline of activity per organization.
+    """
+    __tablename__ = "activity_log"
+
+    # Primary key
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4
+    )
+
+    # Tenant column - REQUIRED for RLS
+    org_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("orgs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    # Event classification
+    event_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True
+    )
+    # Event types:
+    # TASK_CREATED, TASK_STATUS_CHANGED, TASK_DELETED
+    # CALL_INITIATED, CALL_COMPLETED, CALL_NO_ANSWER, CALL_FAILED
+    # SMS_SENT, SMS_DELIVERED, SMS_FAILED
+    # USER_LOGIN, USER_LOGOUT
+
+    # Related entities (optional)
+    task_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("tasks.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+
+    # Actor (who triggered this event - null for system events)
+    actor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True
+    )
+
+    # Human-readable summary
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Additional context (JSON)
+    details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
+    # Timestamp
+    created_at_utc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+    # Indexes for common queries
+    __table_args__ = (
+        Index('ix_activity_log_org_created', 'org_id', 'created_at_utc'),
+        Index('ix_activity_log_org_type_created', 'org_id', 'event_type', 'created_at_utc'),
+        Index('ix_activity_log_task_created', 'task_id', 'created_at_utc'),
+    )
