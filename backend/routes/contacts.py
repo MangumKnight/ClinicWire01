@@ -65,7 +65,7 @@ async def search_contacts(
 ):
     """Search contacts by doctor name or office name"""
     repo = ContactRepository(session)
-    contacts = await repo.search_contacts(q, limit)
+    contacts = await repo.search_contacts(auth.org_ids, q, limit)
     
     items = [
         ContactResponse(
@@ -195,18 +195,13 @@ async def update_contact(
         data["fax_e164"] = None
     
     repo = ContactRepository(session)
-    
-    # First check if contact exists and user has access to it
-    existing_contact = await repo.get_by_id(contact_uuid)
+
+    # Get contact with org scoping (returns None if user doesn't have access)
+    existing_contact = await repo.get_by_id(contact_uuid, auth.org_ids)
     if not existing_contact:
         raise HTTPException(status_code=404, detail="Contact not found")
-    
-    # The RLS policy will ensure the user can only see contacts in their orgs
-    # But let's be explicit about checking
-    if existing_contact.org_id not in auth.org_ids:
-        raise HTTPException(status_code=403, detail="Access denied to this contact")
-    
-    contact = await repo.update_contact(contact_uuid, data)
+
+    contact = await repo.update_contact(contact_uuid, auth.org_ids, data)
     
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
@@ -238,7 +233,7 @@ async def verify_contact_field(
         raise HTTPException(status_code=400, detail="Invalid contact ID")
     
     repo = ContactRepository(session)
-    success = await repo.verify_field(contact_uuid, request.field)
+    success = await repo.verify_field(contact_uuid, auth.org_ids, request.field)
     
     if not success:
         raise HTTPException(status_code=404, detail="Contact not found")
@@ -258,11 +253,11 @@ async def delete_contact(
         raise HTTPException(status_code=400, detail="Invalid contact ID")
     
     repo = ContactRepository(session)
-    contact = await repo.get_by_id(contact_uuid)
-    
+    contact = await repo.get_by_id(contact_uuid, auth.org_ids)
+
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
-    
+
     await session.delete(contact)
     await session.commit()
     

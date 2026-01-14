@@ -80,7 +80,10 @@ class ElevenLabsService:
             
             if response.ok:
                 result = response.json()
-                logger.info(f"ElevenLabs call initiated: {result}")
+                # Log only IDs, not full response (may contain sensitive data)
+                conv_id = result.get("conversation_id") or result.get("call_id") or result.get("id")
+                twilio_sid_log = result.get("callSid", "N/A")
+                logger.info(f"ElevenLabs call initiated: conversation_id={conv_id}, twilio_sid={twilio_sid_log}")
                 
                 # Extract both conversation ID and Twilio call SID
                 conversation_id = result.get("conversation_id") or result.get("call_id") or result.get("id")

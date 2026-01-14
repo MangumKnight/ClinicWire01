@@ -145,14 +145,14 @@ class MagicLinkHandler:
 
         # In development mode, always use dev fallback (don't attempt SMTP)
         if is_dev:
-            # Log magic link URL for development (no secrets exposed)
+            # Log only that a magic link was generated (no URLs or codes in logs)
             logger.info(f"[DEV] Magic link generated for {email}")
-            logger.info(f"[DEV] Verify URL: {FRONTEND_URL}/auth/verify?email={email}&code=<redacted>")
-            # Print full link to console for local testing only
+            # Print redacted info to console for local testing
             print(f"\n{'='*60}")
             print(f"DEVELOPMENT MODE - Magic Link")
             print(f"Email: {email}")
-            print(f"Link: {magic_link}")
+            print(f"Verify at: {FRONTEND_URL}/auth/verify")
+            print(f"Code: {code[:4]}...{code[-4:]}")
             print(f"{'='*60}\n")
             return (True, "dev_mode")
 

@@ -23,12 +23,13 @@ from dotenv import load_dotenv
 # Import our modules
 from db.database import get_session, close_database
 from db.auth_session import get_auth_session
-from db.repo_v2 import TaskRepository, CallEventRepository, SmsEventRepository
+from db.repo_v2 import TaskRepository, CallEventRepository, SmsEventRepository, ActivityLogRepository
 from services.twilio_service import TwilioService
 from services.elevenlabs_service import ElevenLabsService
 from utils.phone import normalize_us_number, format_display
 from utils.schedule import is_business_hours, next_business_time, schedule_retry, validate_call_timing, log_scheduling_decision, get_business_day_key
 from auth.jwt_handler import get_current_user, get_optional_user, AuthContext
+from twilio.request_validator import RequestValidator
 
 # Load environment variables
 load_dotenv()
@@ -124,9 +125,11 @@ app.add_middleware(
 from routes.contacts import router as contacts_router
 from routes.auth import router as auth_router
 from routes.organizations import router as organizations_router
+from routes.activity import router as activity_router
 app.include_router(contacts_router)
 app.include_router(auth_router)
 app.include_router(organizations_router)
+app.include_router(activity_router)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -199,13 +202,24 @@ async def create_task(
         
         # Create or get existing task (idempotency)
         task = await task_repo.create_or_get_task(task_data)
-        
+
         # Check if this is a duplicate request
         idempotency_hit = task.status != 'QUEUED' or task.attempts > 0
-        
+
         if not idempotency_hit:
             # Task created successfully - remains QUEUED until manual "Call Now" is pressed
             logger.info(f"[Task] Created {task.id} - waiting for manual call initiation")
+
+            # Log activity
+            activity_repo = ActivityLogRepository(session)
+            await activity_repo.log_event(
+                org_id=current_org.id,
+                event_type="task.created",
+                summary=f"Task created for {task.patient_alias} → {task.doctor_name}",
+                task_id=task.id,
+                actor_id=auth.user_id,
+                details={"workflow_type": task.workflow_type, "status": task.status}
+            )
         else:
             logger.info(f"[Task] Idempotency hit for {task.id}")
         
@@ -230,8 +244,8 @@ async def get_task(
     """Get task details including latest status"""
     try:
         task_repo = TaskRepository(session)
-        task = await task_repo.get_by_id(uuid.UUID(task_id))
-        
+        task = await task_repo.get_by_id(uuid.UUID(task_id), auth.org_ids)
+
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         
@@ -285,8 +299,9 @@ async def search_tasks(
         
         task_repo = TaskRepository(session)
         offset = (page - 1) * per_page
-        
+
         tasks = await task_repo.search_tasks(
+            org_ids=auth.org_ids,
             status=status,
             workflow_type=workflow_type,
             therapist_phone=therapist_phone,
@@ -316,6 +331,50 @@ async def search_tasks(
         logger.error(f"Error searching tasks: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+# PHI redaction helper
+def redact_phone(phone: str) -> str:
+    """Redact phone number for logging, keeping last 4 digits."""
+    if not phone:
+        return "***"
+    digits = ''.join(filter(str.isdigit, phone))
+    if len(digits) >= 4:
+        return f"***{digits[-4:]}"
+    return "***"
+
+# Twilio signature validation helper
+def validate_twilio_signature(request: Request, form_data: dict) -> bool:
+    """
+    Validate Twilio webhook signature.
+    Returns True if valid, False if invalid.
+    Skips validation if TWILIO_AUTH_TOKEN not set or SKIP_TWILIO_SIGNATURE_VALIDATION=true.
+    """
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+    skip_validation = os.getenv("SKIP_TWILIO_SIGNATURE_VALIDATION", "false").lower() == "true"
+
+    if skip_validation:
+        logger.debug("[Webhook] Signature validation skipped (SKIP_TWILIO_SIGNATURE_VALIDATION=true)")
+        return True
+
+    if not auth_token:
+        logger.warning("[Webhook] TWILIO_AUTH_TOKEN not set - skipping signature validation")
+        return True
+
+    signature = request.headers.get("X-Twilio-Signature", "")
+    if not signature:
+        logger.warning("[Webhook] Missing X-Twilio-Signature header")
+        return False
+
+    # Build the full URL that Twilio signed
+    url = str(request.url)
+
+    validator = RequestValidator(auth_token)
+    is_valid = validator.validate(url, form_data, signature)
+
+    if not is_valid:
+        logger.warning(f"[Webhook] Invalid Twilio signature for URL: {url}")
+
+    return is_valid
+
 @app.post("/webhooks/twilio/status")
 async def twilio_status_webhook(
     request: Request,
@@ -326,11 +385,19 @@ async def twilio_status_webhook(
     Updates task status and sends SMS on completion
     """
     try:
-        # Parse webhook data
+        # Parse webhook data first (needed for signature validation)
         form_data = await request.form()
-        call_sid = form_data.get("CallSid") or form_data.get("call_id")
-        call_status = form_data.get("CallStatus") or form_data.get("status", "")
-        call_duration = form_data.get("CallDuration") or form_data.get("duration", "0")
+        form_dict = dict(form_data)
+
+        # Validate Twilio signature
+        if not validate_twilio_signature(request, form_dict):
+            logger.warning("[Webhook] Rejected: invalid Twilio signature")
+            raise HTTPException(status_code=403, detail="Invalid signature")
+
+        # Extract fields from validated form data
+        call_sid = form_dict.get("CallSid") or form_dict.get("call_id")
+        call_status = form_dict.get("CallStatus") or form_dict.get("status", "")
+        call_duration = form_dict.get("CallDuration") or form_dict.get("duration", "0")
         
         if not call_sid:
             return {"error": "No call SID provided"}
@@ -340,21 +407,21 @@ async def twilio_status_webhook(
         task_repo = TaskRepository(session)
         sms_event_repo = SmsEventRepository(session)
         
-        # Find call event
-        call_event = await call_event_repo.get_by_twilio_sid(call_sid)
+        # Find call event (system/unscoped - validated via Twilio signature)
+        call_event = await call_event_repo.get_by_twilio_sid_system(call_sid)
         if not call_event:
             logger.warning(f"[Webhook] Unknown call SID: {call_sid}")
             return {"error": "Unknown call SID"}
         
         task = call_event.task
         
-        # Update call event
+        # Update call event (system/unscoped - validated via Twilio signature)
         duration_sec = int(call_duration) if call_duration.isdigit() else 0
-        await call_event_repo.update_call_event(
+        await call_event_repo.update_call_event_system(
             call_sid,
             call_status.lower(),
             duration_sec,
-            dict(form_data)
+            form_dict
         )
         
         # Map call status to task status
@@ -378,8 +445,8 @@ async def twilio_status_webhook(
             if task.attempts < max_attempts - 1:
                 # Schedule retry using business hours logic
                 next_retry = schedule_retry(task.created_at_utc, task.attempts + 1)
-                await task_repo.increment_attempts(task.id, next_retry)
-                await task_repo.update_status(task.id, "NO_ANSWER_RETRY")
+                await task_repo.increment_attempts_system(task.id, next_retry)
+                await task_repo.update_status_system(task.id, "NO_ANSWER_RETRY")
                 
                 log_scheduling_decision(
                     str(task.id), 
@@ -390,12 +457,28 @@ async def twilio_status_webhook(
                 logger.info(f"[Webhook] Task {task.id} scheduled for retry #{task.attempts + 1} at {next_retry}")
             else:
                 # Max retries reached
-                await task_repo.update_status(task.id, "FAILED", "Max retry attempts reached")
+                await task_repo.update_status_system(task.id, "FAILED", "Max retry attempts reached")
                 new_status = "FAILED"
         else:
             # Terminal status
-            await task_repo.update_status(task.id, new_status)
-        
+            await task_repo.update_status_system(task.id, new_status)
+
+        # Log call completion activity
+        activity_repo = ActivityLogRepository(session)
+        event_type_map = {
+            "RESOLVED": "call.completed",
+            "FAILED": "call.failed",
+            "NO_ANSWER_RETRY": "call.no_answer"
+        }
+        await activity_repo.log_event(
+            org_id=task.org_id,
+            event_type=event_type_map.get(new_status, "call.status_changed"),
+            summary=f"Call {new_status.lower().replace('_', ' ')} for {task.doctor_name}",
+            task_id=task.id,
+            actor_id=None,  # System event
+            details={"call_status": call_status, "duration_sec": duration_sec, "previous_attempts": task.attempts}
+        )
+
         # Send SMS if terminal status
         if new_status in ["RESOLVED", "FAILED"]:
             # Check SMS rate limit
@@ -403,8 +486,8 @@ async def twilio_status_webhook(
             recent_count = await task_repo.count_recent_sms_for_therapist(task.therapist_phone)
             
             if recent_count >= max_per_hour:
-                logger.warning(f"[SMS] Rate limit hit for {task.therapist_phone}")
-                await task_repo.update_status(task.id, task.status, f"{task.notes} | SMS rate limit exceeded")
+                logger.warning(f"[SMS] Rate limit hit for phone {redact_phone(task.therapist_phone)}")
+                await task_repo.update_status_system(task.id, task.status, f"{task.notes} | SMS rate limit exceeded")
             else:
                 # Compose SMS
                 brand = os.getenv("SMS_BRAND", "[ClinicWire]")
@@ -429,15 +512,28 @@ async def twilio_status_webhook(
                     if os.getenv("SIMULATE", "true").lower() != "true":
                         result = twilio_service.send_sms(task.therapist_phone, message)
                         if result and result.get('sid'):
-                            await sms_event_repo.update_sms_status(result['sid'], 'SENT')
+                            await sms_event_repo.update_sms_status(result['sid'], task.org_id, 'SENT')
                     
-                    await task_repo.update_sms_sent(task.id)
-                    logger.info(f"[SMS] Sent to {task.therapist_phone} for task {task.id}")
+                    await task_repo.update_sms_sent_system(task.id)
+                    logger.info(f"[SMS] Sent to phone {redact_phone(task.therapist_phone)} for task {task.id}")
+
+                    # Log SMS sent activity
+                    await activity_repo.log_event(
+                        org_id=task.org_id,
+                        event_type="sms.sent",
+                        summary=f"SMS notification sent for task outcome: {outcome}",
+                        task_id=task.id,
+                        actor_id=None,  # System event
+                        details={"outcome": outcome}
+                    )
                 else:
                     logger.info(f"[SMS] Already sent for task {task.id}")
         
         return {"status": "ok", "task_id": str(task.id)}
         
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 403 for invalid signature)
+        raise
     except Exception as e:
         logger.error(f"Error in webhook: {e}")
         return {"error": "Internal error"}
@@ -446,7 +542,10 @@ async def twilio_status_webhook(
 async def elevenlabs_webhook(request: Request):
     """Stub for future ElevenLabs webhooks"""
     data = await request.json()
-    logger.info(f"[ElevenLabs] Webhook: {data}")
+    # Log only event type and call_id, not full payload (may contain PHI)
+    event_type = data.get("type", "unknown")
+    call_id = data.get("call_id", "unknown")
+    logger.info(f"[ElevenLabs] Webhook received: type={event_type}, call_id={call_id}")
     return {"status": "ok"}
 
 @app.post("/tasks/{task_id}/call")
@@ -462,20 +561,20 @@ async def execute_call(
     try:
         task_repo = TaskRepository(session)
         call_event_repo = CallEventRepository(session)
-        
-        # Get task by ID
-        task = await task_repo.get_by_id(uuid.UUID(task_id))
+
+        # Get task by ID (scoped to user's orgs)
+        task = await task_repo.get_by_id(uuid.UUID(task_id), auth.org_ids)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
-        
+
         # Check if already calling
         if task.status == 'CALLING':
             raise HTTPException(status_code=400, detail="Task is already calling")
-        
+
         # Check if already resolved
         if task.status in ['RESOLVED', 'FAILED']:
             raise HTTPException(status_code=400, detail=f"Task already completed with status: {task.status}")
-        
+
         # Execute call immediately
         if os.getenv("SIMULATE", "true").lower() == "true":
             # Create simulated call event
@@ -484,11 +583,22 @@ async def execute_call(
                 'initiated',
                 f"sim_manual_{task.id}"
             )
-            await task_repo.update_status(task.id, 'CALLING')
-            
+            await task_repo.update_status(task.id, task.org_id, 'CALLING')
+
+            # Log activity
+            activity_repo = ActivityLogRepository(session)
+            await activity_repo.log_event(
+                org_id=task.org_id,
+                event_type="call.initiated",
+                summary=f"Call initiated to {task.doctor_name} (simulation)",
+                task_id=task.id,
+                actor_id=auth.user_id,
+                details={"mode": "simulation"}
+            )
+
             # Schedule simulation
             asyncio.create_task(simulate_call_flow(task.id))
-            
+
             return {"message": "Call initiated (simulation mode)", "task_id": str(task.id)}
         else:
             # Real call via ElevenLabs
@@ -511,8 +621,19 @@ async def execute_call(
                     'initiated',
                     twilio_sid
                 )
-                await task_repo.update_status(task.id, 'CALLING')
-                
+                await task_repo.update_status(task.id, task.org_id, 'CALLING')
+
+                # Log activity
+                activity_repo = ActivityLogRepository(session)
+                await activity_repo.log_event(
+                    org_id=task.org_id,
+                    event_type="call.initiated",
+                    summary=f"Call initiated to {task.doctor_name}",
+                    task_id=task.id,
+                    actor_id=auth.user_id,
+                    details={"call_id": call_result["call_id"]}
+                )
+
                 return {"message": "Call initiated successfully", "task_id": str(task.id), "call_id": call_result["call_id"]}
             else:
                 raise HTTPException(status_code=500, detail="Failed to initiate call")
@@ -532,8 +653,8 @@ async def delete_task(
     """Delete a task and all related events"""
     try:
         task_repo = TaskRepository(session)
-        task = await task_repo.get_by_id(uuid.UUID(task_id))
-        
+        task = await task_repo.get_by_id(uuid.UUID(task_id), auth.org_ids)
+
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         
