@@ -347,13 +347,20 @@ def validate_twilio_signature(request: Request, form_data: dict) -> bool:
     Validate Twilio webhook signature.
     Returns True if valid, False if invalid.
     Skips validation if TWILIO_AUTH_TOKEN not set or SKIP_TWILIO_SIGNATURE_VALIDATION=true.
+
+    SECURITY: SKIP_TWILIO_SIGNATURE_VALIDATION bypass only works when APP_ENV=development.
+    In production, signature validation is always enforced.
     """
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
     skip_validation = os.getenv("SKIP_TWILIO_SIGNATURE_VALIDATION", "false").lower() == "true"
+    app_env = os.getenv("APP_ENV", "production").lower()
 
     if skip_validation:
-        logger.debug("[Webhook] Signature validation skipped (SKIP_TWILIO_SIGNATURE_VALIDATION=true)")
-        return True
+        if app_env != "development":
+            logger.warning("[Webhook] SKIP_TWILIO_SIGNATURE_VALIDATION ignored - only allowed in development")
+        else:
+            logger.debug("[Webhook] Signature validation skipped (SKIP_TWILIO_SIGNATURE_VALIDATION=true, APP_ENV=development)")
+            return True
 
     if not auth_token:
         logger.warning("[Webhook] TWILIO_AUTH_TOKEN not set - skipping signature validation")
