@@ -483,3 +483,16 @@ class ActivityLogRepository:
             .order_by(ActivityLog.created_at_utc.asc())
         )
         return list(result.scalars().all())
+
+    async def has_event_for_task(
+        self,
+        task_id: uuid.UUID,
+        event_type: str
+    ) -> bool:
+        """Check if an event of given type already exists for a task (for idempotency)"""
+        result = await self.session.execute(
+            select(func.count(ActivityLog.id))
+            .where(and_(ActivityLog.task_id == task_id, ActivityLog.event_type == event_type))
+        )
+        count = result.scalar()
+        return count is not None and count > 0

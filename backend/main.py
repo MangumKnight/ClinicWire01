@@ -555,6 +555,249 @@ async def elevenlabs_webhook(request: Request):
     logger.info(f"[ElevenLabs] Webhook received: type={event_type}, call_id={call_id}")
     return {"status": "ok"}
 
+
+# ========================================
+# Call Summary Webhook
+# ========================================
+
+# Outcome codes allowlist (v1)
+VALID_OUTCOME_CODES = {
+    "CONFIRMED_RECEIVED",
+    "CONFIRMED_SIGNED",
+    "SIGNATURE_PENDING",
+    "NEEDS_RESEND",
+    "CALLBACK_REQUESTED",
+    "WRONG_CONTACT",
+    "REFUSED_INFO",
+    "NO_DECISION",
+    "ERROR"
+}
+
+# Max allowed age for webhook timestamp (seconds)
+WEBHOOK_TIMESTAMP_MAX_AGE = 300
+
+# Max length for summary/next_step fields
+SUMMARY_MAX_LENGTH = 500
+
+
+def validate_call_summary_signature(request: Request, body: bytes) -> bool:
+    """
+    Validate call summary webhook signature using HMAC-SHA256.
+    Signature = HMAC-SHA256(secret, timestamp + body)
+    Header: X-Webhook-Signature: sha256=<hex_digest>
+    """
+    import hmac
+    import hashlib
+
+    secret = os.getenv("CALL_SUMMARY_WEBHOOK_SECRET")
+    if not secret:
+        logger.warning("[CallSummary] CALL_SUMMARY_WEBHOOK_SECRET not set - rejecting request")
+        return False
+
+    signature = request.headers.get("X-Webhook-Signature", "")
+    timestamp = request.headers.get("X-Webhook-Timestamp", "")
+
+    if not signature.startswith("sha256="):
+        logger.warning("[CallSummary] Invalid signature format - must start with 'sha256='")
+        return False
+
+    if not timestamp:
+        logger.warning("[CallSummary] Missing X-Webhook-Timestamp header")
+        return False
+
+    # Verify timestamp is recent (within 300 seconds)
+    try:
+        ts_int = int(timestamp)
+        now = int(datetime.now(timezone.utc).timestamp())
+        if abs(now - ts_int) > WEBHOOK_TIMESTAMP_MAX_AGE:
+            logger.warning(f"[CallSummary] Timestamp too old: {ts_int} (now: {now})")
+            return False
+    except ValueError:
+        logger.warning(f"[CallSummary] Invalid timestamp format: {timestamp}")
+        return False
+
+    # Compute expected signature: HMAC(secret, timestamp + body)
+    expected = hmac.new(
+        secret.encode(),
+        (timestamp.encode() + body),
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(signature[7:], expected):
+        logger.warning("[CallSummary] Signature mismatch")
+        return False
+
+    return True
+
+
+def mask_phi_in_text(text: str) -> str:
+    """
+    Mask phone numbers and emails in text for PHI safety.
+    """
+    import re
+
+    if not text:
+        return text
+
+    # Mask phone numbers (various formats)
+    # Matches: +1234567890, (123) 456-7890, 123-456-7890, 123.456.7890, etc.
+    phone_pattern = r'(\+?1?[-.\s]?)?\(?(\d{3})\)?[-.\s]?(\d{3})[-.\s]?(\d{4})'
+    text = re.sub(phone_pattern, r'***-***-\4', text)
+
+    # Mask emails
+    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    text = re.sub(email_pattern, '***@***.***', text)
+
+    return text
+
+
+class CallSummaryRequest(BaseModel):
+    """Request model for call summary webhook"""
+    call_sid: str = Field(..., min_length=1, description="Twilio Call SID")
+    conversation_id: Optional[str] = Field(None, description="ElevenLabs conversation ID")
+    outcome_code: str = Field(..., min_length=1, description="Structured outcome code")
+    summary: str = Field(..., min_length=1, max_length=SUMMARY_MAX_LENGTH, description="Human-readable summary")
+    next_step: Optional[str] = Field(None, max_length=SUMMARY_MAX_LENGTH, description="Recommended next action")
+    confidence: Optional[float] = Field(None, ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
+    source: Optional[str] = Field(None, description="Source: elevenlabs, twilio_ci, manual")
+
+
+@app.post("/webhooks/call-summary")
+async def call_summary_webhook(
+    request: Request,
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Receive call summary from ElevenLabs, Twilio CI, or manual sources.
+
+    Required headers:
+        X-Webhook-Timestamp: Unix timestamp (seconds)
+        X-Webhook-Signature: sha256=<HMAC-SHA256(secret, timestamp + body)>
+
+    Required fields: call_sid, outcome_code, summary
+    Optional fields: conversation_id, next_step, confidence, source
+
+    Security:
+        - HMAC signature validation with replay protection
+        - org_id derived from call_sid -> call_event -> task (never trusted from payload)
+        - Idempotent: duplicate call_sid returns 200 without re-processing
+        - PHI masked in stored summary/next_step
+    """
+    try:
+        # Read raw body for signature validation
+        body = await request.body()
+
+        # Validate signature
+        if not validate_call_summary_signature(request, body):
+            raise HTTPException(status_code=403, detail="Invalid signature")
+
+        # Parse and validate payload
+        import json
+        try:
+            data = json.loads(body)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid JSON")
+
+        # Validate required fields
+        call_sid = data.get("call_sid")
+        outcome_code = data.get("outcome_code")
+        summary = data.get("summary")
+
+        if not call_sid:
+            raise HTTPException(status_code=400, detail="Missing required field: call_sid")
+        if not outcome_code:
+            raise HTTPException(status_code=400, detail="Missing required field: outcome_code")
+        if not summary:
+            raise HTTPException(status_code=400, detail="Missing required field: summary")
+
+        # Validate outcome_code against allowlist
+        if outcome_code not in VALID_OUTCOME_CODES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid outcome_code: {outcome_code}. Must be one of: {', '.join(sorted(VALID_OUTCOME_CODES))}"
+            )
+
+        # Enforce max length
+        if len(summary) > SUMMARY_MAX_LENGTH:
+            summary = summary[:SUMMARY_MAX_LENGTH]
+
+        next_step = data.get("next_step")
+        if next_step and len(next_step) > SUMMARY_MAX_LENGTH:
+            next_step = next_step[:SUMMARY_MAX_LENGTH]
+
+        # Look up call event by twilio_sid (system-scoped)
+        call_event_repo = CallEventRepository(session)
+        call_event = await call_event_repo.get_by_twilio_sid_system(call_sid)
+
+        if not call_event:
+            logger.warning(f"[CallSummary] Call event not found for call_sid: {call_sid}")
+            raise HTTPException(status_code=404, detail="Call event not found")
+
+        task = call_event.task
+        if not task:
+            logger.error(f"[CallSummary] Task not found for call_event: {call_event.id}")
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        # Derive org_id from task (never trust from payload)
+        org_id = task.org_id
+
+        # Check for idempotency - has a call.summary event already been logged for this task?
+        activity_repo = ActivityLogRepository(session)
+        if await activity_repo.has_event_for_task(task.id, "call.summary"):
+            logger.info(f"[CallSummary] Duplicate summary for task {task.id} - returning 200 idempotently")
+            return {"status": "ok", "message": "Summary already processed", "task_id": str(task.id)}
+
+        # Mask PHI in summary and next_step before storing
+        masked_summary = mask_phi_in_text(summary)
+        masked_next_step = mask_phi_in_text(next_step) if next_step else None
+
+        # Build outcome_note
+        if masked_next_step:
+            outcome_note = f"{masked_summary}\n\nNext step: {masked_next_step}"
+        else:
+            outcome_note = masked_summary
+
+        # Update task outcome
+        task_repo = TaskRepository(session)
+        await task_repo.update_outcome_v2(
+            task_id=task.id,
+            org_id=org_id,
+            outcome_code=outcome_code,
+            outcome_note=outcome_note,
+            completed_at_utc=datetime.now(timezone.utc)
+        )
+
+        # Log activity
+        await activity_repo.log_event(
+            org_id=org_id,
+            event_type="call.summary",
+            summary=f"Call summary received: {outcome_code}",
+            task_id=task.id,
+            actor_id=None,  # System event
+            details={
+                "outcome_code": outcome_code,
+                "summary": masked_summary,
+                "next_step": masked_next_step,
+                "confidence": data.get("confidence"),
+                "source": data.get("source"),
+                "conversation_id": data.get("conversation_id")
+            }
+        )
+
+        logger.info(f"[CallSummary] Processed summary for task {task.id}: outcome={outcome_code}")
+
+        return {
+            "status": "ok",
+            "task_id": str(task.id),
+            "outcome_code": outcome_code
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[CallSummary] Error processing webhook: {e}")
+        raise HTTPException(status_code=500, detail="Internal error")
+
 @app.post("/tasks/{task_id}/call")
 async def execute_call(
     task_id: str,

@@ -289,14 +289,19 @@ class Task(Base):
     
     # SMS tracking
     last_sms_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    
+
     # User tracking
     created_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), 
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True
     )
-    
+
+    # Outcome v2 fields (added by migration 004_add_outcome_fields.py)
+    outcome_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    outcome_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    completed_at_utc: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
     # Relationships
     call_events: Mapped[List["CallEvent"]] = relationship(back_populates="task", cascade="all, delete-orphan")
     sms_events: Mapped[List["SmsEvent"]] = relationship(back_populates="task", cascade="all, delete-orphan")
