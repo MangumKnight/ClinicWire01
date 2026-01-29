@@ -126,10 +126,12 @@ from routes.contacts import router as contacts_router
 from routes.auth import router as auth_router
 from routes.organizations import router as organizations_router
 from routes.activity import router as activity_router
+from routes.dashboard import router as dashboard_router
 app.include_router(contacts_router)
 app.include_router(auth_router)
 app.include_router(organizations_router)
 app.include_router(activity_router)
+app.include_router(dashboard_router)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -874,6 +876,7 @@ async def execute_call(
             # Create simulated call event
             await call_event_repo.create_call_event(
                 task.id,
+                task.org_id,
                 'initiated',
                 f"sim_manual_{task.id}"
             )
@@ -912,6 +915,7 @@ async def execute_call(
                 twilio_sid = call_result.get("twilio_sid") or call_result["call_id"]
                 await call_event_repo.create_call_event(
                     task.id,
+                    task.org_id,
                     'initiated',
                     twilio_sid
                 )
@@ -1141,6 +1145,7 @@ async def process_retries():
                         # Simulated retry
                         await call_event_repo.create_call_event(
                             task.id,
+                            task.org_id,
                             'initiated',
                             f"sim_retry_{task.id}_{task.attempts}"
                         )
@@ -1164,6 +1169,7 @@ async def process_retries():
                             twilio_sid = call_result.get("twilio_sid") or call_result["call_id"]
                             await call_event_repo.create_call_event(
                                 task.id,
+                                task.org_id,
                                 'initiated',
                                 twilio_sid
                             )

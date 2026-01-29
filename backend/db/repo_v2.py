@@ -242,9 +242,10 @@ class CallEventRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
     
-    async def create_call_event(self, task_id: uuid.UUID, state: str, twilio_sid: Optional[str] = None) -> CallEvent:
+    async def create_call_event(self, task_id: uuid.UUID, org_id: uuid.UUID, state: str, twilio_sid: Optional[str] = None) -> CallEvent:
         """Create a new call event"""
         event = CallEvent(
+            org_id=org_id,
             task_id=task_id,
             state=state,
             twilio_sid=twilio_sid
