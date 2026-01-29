@@ -583,17 +583,60 @@ SUMMARY_MAX_LENGTH = 500
 def validate_call_summary_signature(request: Request, body: bytes) -> bool:
     """
     Validate call summary webhook signature using HMAC-SHA256.
-    Signature = HMAC-SHA256(secret, timestamp + body)
-    Header: X-Webhook-Signature: sha256=<hex_digest>
+
+    Supports TWO formats:
+    1. ElevenLabs native: ElevenLabs-Signature: t=timestamp,v0=hash
+       Signature = HMAC-SHA256(secret, timestamp + "." + body)
+    2. Custom format: X-Webhook-Timestamp + X-Webhook-Signature: sha256=hash
+       Signature = HMAC-SHA256(secret, timestamp + body)
     """
     import hmac
     import hashlib
+    import re
 
     secret = os.getenv("CALL_SUMMARY_WEBHOOK_SECRET")
     if not secret:
         logger.warning("[CallSummary] CALL_SUMMARY_WEBHOOK_SECRET not set - rejecting request")
         return False
 
+    # Check for ElevenLabs native format first
+    elevenlabs_sig = request.headers.get("ElevenLabs-Signature", "")
+    if elevenlabs_sig:
+        # Parse format: t=timestamp,v0=hash
+        match = re.match(r't=(\d+),v0=([a-f0-9]+)', elevenlabs_sig)
+        if not match:
+            logger.warning(f"[CallSummary] Invalid ElevenLabs-Signature format: {elevenlabs_sig[:50]}")
+            return False
+
+        timestamp = match.group(1)
+        provided_hash = match.group(2)
+
+        # Verify timestamp is recent
+        try:
+            ts_int = int(timestamp)
+            now = int(datetime.now(timezone.utc).timestamp())
+            if abs(now - ts_int) > WEBHOOK_TIMESTAMP_MAX_AGE:
+                logger.warning(f"[CallSummary] ElevenLabs timestamp too old: {ts_int} (now: {now})")
+                return False
+        except ValueError:
+            logger.warning(f"[CallSummary] Invalid ElevenLabs timestamp: {timestamp}")
+            return False
+
+        # ElevenLabs uses: HMAC(timestamp + "." + body)
+        expected = hmac.new(
+            secret.encode(),
+            f"{timestamp}.".encode() + body,
+            hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(provided_hash, expected):
+            logger.warning("[CallSummary] ElevenLabs signature mismatch")
+            return False
+
+        logger.debug("[CallSummary] ElevenLabs signature validated")
+        return True
+
+    # Fall back to custom format: X-Webhook-Timestamp + X-Webhook-Signature
     signature = request.headers.get("X-Webhook-Signature", "")
     timestamp = request.headers.get("X-Webhook-Timestamp", "")
 
@@ -627,6 +670,7 @@ def validate_call_summary_signature(request: Request, body: bytes) -> bool:
         logger.warning("[CallSummary] Signature mismatch")
         return False
 
+    logger.debug("[CallSummary] Custom signature validated")
     return True
 
 

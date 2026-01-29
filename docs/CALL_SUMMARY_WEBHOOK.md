@@ -16,12 +16,23 @@ POST /webhooks/call-summary
 - **Idempotency**: Duplicate summaries for same task return 200 without re-processing
 - **PHI safety**: Phone numbers and emails are masked before storage
 
-## Required Headers
+## Supported Signature Formats
 
-| Header | Description |
-|--------|-------------|
+The endpoint accepts TWO signature formats:
+
+### Format 1: ElevenLabs Native (Recommended)
+
+| Header | Value |
+|--------|-------|
 | `Content-Type` | `application/json` |
-| `X-Webhook-Timestamp` | Unix timestamp (seconds) when request was sent |
+| `ElevenLabs-Signature` | `t=<timestamp>,v0=<HMAC-SHA256(secret, timestamp + "." + body)>` |
+
+### Format 2: Custom Headers (Twilio CI / Manual)
+
+| Header | Value |
+|--------|-------|
+| `Content-Type` | `application/json` |
+| `X-Webhook-Timestamp` | Unix timestamp (seconds) |
 | `X-Webhook-Signature` | `sha256=<HMAC-SHA256(secret, timestamp + body)>` |
 
 ## Payload
@@ -63,7 +74,31 @@ CALL_SUMMARY_WEBHOOK_SECRET=your-secret-here
 
 ## Local Testing
 
-### 1. Generate Signature (Python)
+### 1a. ElevenLabs Format Signature (Python)
+
+```python
+import hmac
+import hashlib
+import json
+import time
+
+SECRET = "test-secret-for-local-dev"
+TIMESTAMP = str(int(time.time()))
+
+payload = {"call_sid": "CA_TEST_123", "outcome_code": "CONFIRMED_RECEIVED", "summary": "Test"}
+body = json.dumps(payload)
+
+# ElevenLabs format: HMAC(timestamp + "." + body)
+signature = hmac.new(
+    SECRET.encode(),
+    f"{TIMESTAMP}.{body}".encode(),
+    hashlib.sha256
+).hexdigest()
+
+print(f"ElevenLabs-Signature: t={TIMESTAMP},v0={signature}")
+```
+
+### 1b. Custom Format Signature (Python)
 
 ```python
 import hmac

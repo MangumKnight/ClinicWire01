@@ -463,6 +463,71 @@ async def test_timestamp_replay():
 
 
 # ============================================================
+# Test 7: ElevenLabs Signature Format
+# ============================================================
+
+async def test_elevenlabs_signature_format():
+    """Test that ElevenLabs native signature format is accepted"""
+    print("\n--- Test 7: ElevenLabs Signature Format ---")
+
+    from main import validate_call_summary_signature
+
+    class MockRequest:
+        def __init__(self, headers):
+            self.headers = headers
+
+    # Set test secret
+    original_secret = os.environ.get("CALL_SUMMARY_WEBHOOK_SECRET")
+    os.environ["CALL_SUMMARY_WEBHOOK_SECRET"] = TEST_WEBHOOK_SECRET
+
+    try:
+        payload = {"call_sid": "CA123", "outcome_code": "CONFIRMED_RECEIVED", "summary": "Test"}
+        body = json.dumps(payload).encode()
+        now = int(time.time())
+
+        # ElevenLabs format: HMAC(timestamp + "." + body)
+        signature = hmac.new(
+            TEST_WEBHOOK_SECRET.encode(),
+            f"{now}.".encode() + body,
+            hashlib.sha256
+        ).hexdigest()
+
+        # Format: t=timestamp,v0=hash
+        elevenlabs_header = f"t={now},v0={signature}"
+
+        mock_req = MockRequest({"ElevenLabs-Signature": elevenlabs_header})
+        result = validate_call_summary_signature(mock_req, body)
+        assert result == True, "Should accept valid ElevenLabs signature"
+        print(f"  Valid ElevenLabs signature: ACCEPTED")
+
+        # Test invalid ElevenLabs signature
+        mock_req = MockRequest({"ElevenLabs-Signature": f"t={now},v0=wronghash"})
+        result = validate_call_summary_signature(mock_req, body)
+        assert result == False, "Should reject invalid ElevenLabs signature"
+        print(f"  Invalid ElevenLabs signature: REJECTED")
+
+        # Test old ElevenLabs timestamp
+        old_ts = now - 600  # 10 minutes ago
+        old_signature = hmac.new(
+            TEST_WEBHOOK_SECRET.encode(),
+            f"{old_ts}.".encode() + body,
+            hashlib.sha256
+        ).hexdigest()
+        mock_req = MockRequest({"ElevenLabs-Signature": f"t={old_ts},v0={old_signature}"})
+        result = validate_call_summary_signature(mock_req, body)
+        assert result == False, "Should reject old ElevenLabs timestamp"
+        print(f"  Old ElevenLabs timestamp: REJECTED")
+
+        print("PASSED: ElevenLabs signature format works correctly")
+
+    finally:
+        if original_secret:
+            os.environ["CALL_SUMMARY_WEBHOOK_SECRET"] = original_secret
+        elif "CALL_SUMMARY_WEBHOOK_SECRET" in os.environ:
+            del os.environ["CALL_SUMMARY_WEBHOOK_SECRET"]
+
+
+# ============================================================
 # Main Test Runner
 # ============================================================
 
@@ -492,6 +557,7 @@ async def run_all_tests():
         await test_phi_masking()
         await test_payload_validation()
         await test_timestamp_replay()
+        await test_elevenlabs_signature_format()
 
     await engine.dispose()
 
