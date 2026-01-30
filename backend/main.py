@@ -251,26 +251,40 @@ async def get_task(
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         
-        # Get latest call event
-        latest_call = None
-        if task.call_events:
-            latest_call = max(task.call_events, key=lambda x: x.created_at_utc)
-        
+        # Get call events sorted by time (newest first)
+        call_events_sorted = sorted(task.call_events, key=lambda x: x.created_at_utc, reverse=True) if task.call_events else []
+        latest_call = call_events_sorted[0] if call_events_sorted else None
+
+        # Build call history (PHI-safe: no raw_status_json)
+        call_history = [
+            {
+                "state": ce.state,
+                "duration_sec": ce.duration_sec,
+                "created_at": ce.created_at_utc.isoformat()
+            }
+            for ce in call_events_sorted
+        ]
+
         return {
             "task_id": str(task.id),
             "status": task.status,
             "workflow_type": task.workflow_type,
             "patient_alias": task.patient_alias,
             "doctor_name": task.doctor_name,
+            "doctor_phone": format_display(task.doctor_phone),
             "therapist_phone": format_display(task.therapist_phone),
             "created_at": task.created_at_utc.isoformat(),
             "updated_at": task.updated_at_utc.isoformat(),
             "attempts": task.attempts,
+            "outcome_code": task.outcome_code,
+            "outcome_note": task.outcome_note,
+            "completed_at": task.completed_at_utc.isoformat() if task.completed_at_utc else None,
             "latest_call": {
                 "state": latest_call.state,
                 "duration_sec": latest_call.duration_sec,
                 "created_at": latest_call.created_at_utc.isoformat()
             } if latest_call else None,
+            "call_history": call_history,
             "sms_sent": task.last_sms_sent_at is not None
         }
         
@@ -320,7 +334,9 @@ async def search_tasks(
                     "patient_alias": task.patient_alias,
                     "doctor_name": task.doctor_name,
                     "doctor_phone": format_display(task.doctor_phone) if (hasattr(task, 'doctor_phone') and task.doctor_phone) else 'N/A',
-                    "created_at": task.created_at_utc.isoformat()
+                    "created_at": task.created_at_utc.isoformat(),
+                    "outcome_code": task.outcome_code,
+                    "attempts": task.attempts
                 }
                 for task in tasks
             ],

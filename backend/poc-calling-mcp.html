@@ -627,6 +627,448 @@
             padding: 3rem 1rem;
             color: #999;
         }
+
+        /* Impact Tab Styles */
+        .impact-container {
+            padding: 1rem 0;
+        }
+
+        .impact-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .impact-controls label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .impact-controls select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .period-display {
+            color: #999;
+            font-size: 0.9rem;
+            margin-left: auto;
+        }
+
+        .impact-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .impact-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .impact-card .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.25rem;
+        }
+
+        .impact-card .value.success {
+            color: #10b981;
+        }
+
+        .impact-card .value.money {
+            color: #10b981;
+        }
+
+        .impact-card .label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .impact-card .sublabel {
+            font-size: 0.75rem;
+            color: #999;
+            font-style: italic;
+        }
+
+        .impact-section {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .impact-section h3 {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .outcome-chart {
+            min-height: 200px;
+        }
+
+        .outcome-bar-container {
+            margin-bottom: 0.75rem;
+        }
+
+        .outcome-bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+        }
+
+        .outcome-bar-label .name {
+            color: #333;
+        }
+
+        .outcome-bar-label .count {
+            color: #666;
+        }
+
+        .outcome-bar-track {
+            height: 24px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .outcome-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 0.5rem;
+        }
+
+        .outcome-bar-fill.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .outcome-bar-fill.other {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+        }
+
+        .outcome-bar-percent {
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .impact-footer {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #666;
+            text-align: center;
+        }
+
+        .impact-footer strong {
+            color: #333;
+        }
+
+        .impact-loading {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+        }
+
+        .impact-empty {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #666;
+        }
+
+        .impact-empty h4 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        /* Task Details Drawer */
+        .task-drawer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: flex-end;
+        }
+
+        .task-drawer.open {
+            display: flex;
+        }
+
+        .drawer-content {
+            width: 500px;
+            max-width: 90vw;
+            background: white;
+            height: 100%;
+            overflow-y: auto;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f7fafc;
+        }
+
+        .drawer-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: #2d3748;
+        }
+
+        .drawer-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #718096;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .drawer-close:hover {
+            color: #2d3748;
+        }
+
+        .drawer-body {
+            padding: 1.5rem;
+        }
+
+        .drawer-loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .drawer-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .drawer-section h4 {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #718096;
+            letter-spacing: 0.05em;
+        }
+
+        .drawer-field {
+            margin-bottom: 0.75rem;
+        }
+
+        .drawer-label {
+            font-size: 0.75rem;
+            color: #718096;
+            margin-bottom: 0.25rem;
+        }
+
+        .drawer-value {
+            font-size: 0.95rem;
+            color: #2d3748;
+        }
+
+        .drawer-outcome {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .drawer-outcome.failed {
+            background: #fff5f5;
+            border-color: #feb2b2;
+        }
+
+        .outcome-code-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #48bb78;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .outcome-code-badge.failed {
+            background: #f56565;
+        }
+
+        .outcome-code-badge.pending {
+            background: #ed8936;
+        }
+
+        .outcome-note {
+            font-size: 0.9rem;
+            color: #2d3748;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .call-history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .call-history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f7fafc;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .call-history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .call-state {
+            font-weight: 500;
+        }
+
+        .call-state.completed,
+        .call-state.answered {
+            color: #48bb78;
+        }
+
+        .call-state.initiated,
+        .call-state.ringing {
+            color: #667eea;
+        }
+
+        .call-state.failed,
+        .call-state.busy,
+        .call-state.no-answer {
+            color: #f56565;
+        }
+
+        .call-duration {
+            font-size: 0.85rem;
+            color: #718096;
+        }
+
+        .call-time {
+            font-size: 0.75rem;
+            color: #a0aec0;
+        }
+
+        .btn-details {
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-details:hover {
+            background: #5a67d8;
+        }
+
+        /* Workflow badge */
+        .workflow-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .workflow-badge.poc {
+            background: #ebf8ff;
+            color: #2b6cb0;
+        }
+
+        .workflow-badge.referral {
+            background: #faf5ff;
+            color: #6b46c1;
+        }
+
+        /* Outcome in table */
+        .outcome-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .outcome-badge.success {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .outcome-badge.pending {
+            background: #feebc8;
+            color: #c05621;
+        }
+
+        .outcome-badge.failed {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        /* Activity call.summary badge */
+        .summary-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+        }
+
+        .summary-outcome {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .summary-outcome.failed {
+            background: #f56565;
+        }
     </style>
 </head>
 <body>
@@ -735,6 +1177,7 @@
         <div class="tab-nav">
             <button class="tab-btn active" data-tab="tasks" onclick="switchTab('tasks')">Tasks</button>
             <button class="tab-btn" data-tab="activity" onclick="switchTab('activity')">Activity</button>
+            <button class="tab-btn" data-tab="impact" onclick="switchTab('impact')">Impact</button>
         </div>
 
         <!-- Tasks Tab Content -->
@@ -778,16 +1221,18 @@
                     <tr>
                         <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
                         <th>Task ID</th>
-                        <th>Doctor Name</th>
-                        <th>Doctor Phone</th>
+                        <th>Workflow</th>
+                        <th>Doctor</th>
                         <th>Status</th>
-                        <th>Created At</th>
+                        <th>Outcome</th>
+                        <th>Attempts</th>
+                        <th>Created</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 2rem;">
+                        <td colspan="9" style="text-align: center; padding: 2rem;">
                             No tasks created yet. Use the form above to create your first task.
                         </td>
                     </tr>
@@ -795,6 +1240,19 @@
             </table>
         </div>
         </div><!-- End Tasks Tab -->
+
+        <!-- Task Details Drawer -->
+        <div id="taskDrawer" class="task-drawer" onclick="closeDrawerOnBackdrop(event)">
+            <div class="drawer-content">
+                <div class="drawer-header">
+                    <h3>Task Details</h3>
+                    <button class="drawer-close" onclick="closeTaskDrawer()">&times;</button>
+                </div>
+                <div class="drawer-body" id="drawerBody">
+                    <div class="drawer-loading">Loading...</div>
+                </div>
+            </div>
+        </div>
 
         <!-- Activity Tab Content -->
         <div id="activity-tab" class="tab-content">
@@ -819,6 +1277,42 @@
                 </button>
             </div>
         </div><!-- End Activity Tab -->
+
+        <!-- Impact Tab Content -->
+        <div id="impact-tab" class="tab-content">
+            <div class="impact-container">
+                <!-- Date Range Selector -->
+                <div class="impact-controls">
+                    <label>Date range:</label>
+                    <select id="impactDateRange" onchange="loadImpactData()">
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d" selected>Last 30 Days</option>
+                        <option value="90d">Last 90 Days</option>
+                        <option value="all">All Time</option>
+                    </select>
+                    <span id="impactPeriodDisplay" class="period-display"></span>
+                </div>
+
+                <!-- Summary Cards -->
+                <div id="impactSummary" class="impact-summary">
+                    <div class="impact-loading">Loading metrics...</div>
+                </div>
+
+                <!-- Outcome Distribution Chart -->
+                <div id="impactOutcomes" class="impact-section">
+                    <h3>Outcome Distribution</h3>
+                    <div id="outcomeChart" class="outcome-chart">
+                        <div class="impact-loading">Loading outcomes...</div>
+                    </div>
+                </div>
+
+                <!-- How This Is Calculated -->
+                <div id="impactFooter" class="impact-footer">
+                    <strong>How this is calculated:</strong>
+                    <span id="impactAssumptions"></span>
+                </div>
+            </div>
+        </div><!-- End Impact Tab -->
 
     </div>
 
@@ -1333,39 +1827,195 @@
         // Update task table with current data
         function updateTaskTable() {
             const tbody = document.getElementById('tableBody');
-            
+
             // Filter taskData based on currentFilter
             let filteredTasks = taskData;
             if (currentFilter !== 'all') {
-                filteredTasks = taskData.filter(task => 
+                filteredTasks = taskData.filter(task =>
                     task.status.toLowerCase() === currentFilter.toLowerCase()
                 );
             }
-            
+
             if (filteredTasks.length === 0) {
-                const message = taskData.length === 0 ? 
+                const message = taskData.length === 0 ?
                     'No tasks created yet. Use the form above to create your first task.' :
                     'No records found';
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">${message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 2rem;">${message}</td></tr>`;
                 return;
             }
-            
+
             tbody.innerHTML = filteredTasks.map(task => `
                 <tr>
                     <td><input type="checkbox" class="task-checkbox" data-task-id="${task.task_id}"></td>
                     <td>${task.task_id.substring(0, 8)}...</td>
-                    <td>${escapeHtml(task.doctor_name)}</td>
-                    <td>${formatPhone(task.doctor_phone || 'N/A')}</td>
+                    <td>${formatWorkflowBadge(task.workflow_type)}</td>
+                    <td>
+                        <div>${escapeHtml(task.doctor_name)}</div>
+                        <div style="font-size: 0.75rem; color: #718096;">${task.doctor_phone || 'N/A'}</div>
+                    </td>
                     <td><span class="status-badge status-${task.status.toLowerCase()}">${task.status}</span></td>
+                    <td>${formatOutcomeBadge(task.outcome_code)}</td>
+                    <td>${task.attempts || 0}</td>
                     <td>${formatTimestamp(task.created_at)}</td>
                     <td>
-                        <button class="btn btn-secondary" onclick="executeCallNow('${task.task_id}')" 
-                            ${task.status === 'CALLING' ? 'disabled' : ''}>
-                            Call Now
+                        <button class="btn btn-details" onclick="openTaskDrawer('${task.task_id}')">Details</button>
+                        <button class="btn btn-secondary" onclick="executeCallNow('${task.task_id}')"
+                            ${task.status === 'CALLING' || task.status === 'RESOLVED' || task.status === 'FAILED' ? 'disabled' : ''}>
+                            Call
                         </button>
                     </td>
                 </tr>
             `).join('');
+        }
+
+        // Format workflow type as badge
+        function formatWorkflowBadge(workflowType) {
+            if (!workflowType) return '-';
+            const type = workflowType.toLowerCase();
+            if (type.includes('poc')) {
+                return '<span class="workflow-badge poc">POC</span>';
+            } else if (type.includes('referral')) {
+                return '<span class="workflow-badge referral">Referral</span>';
+            }
+            return `<span class="workflow-badge">${escapeHtml(workflowType)}</span>`;
+        }
+
+        // Format outcome code as badge
+        function formatOutcomeBadge(outcomeCode) {
+            if (!outcomeCode) return '-';
+            const successCodes = ['CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED', 'SIGNATURE_PENDING'];
+            const failedCodes = ['WRONG_CONTACT', 'REFUSED_INFO', 'ERROR'];
+
+            let badgeClass = 'pending';
+            if (successCodes.includes(outcomeCode)) {
+                badgeClass = 'success';
+            } else if (failedCodes.includes(outcomeCode)) {
+                badgeClass = 'failed';
+            }
+
+            // Format the code for display
+            const displayCode = outcomeCode.replace(/_/g, ' ').toLowerCase()
+                .replace(/\b\w/g, c => c.toUpperCase());
+
+            return `<span class="outcome-badge ${badgeClass}">${escapeHtml(displayCode)}</span>`;
+        }
+
+        // Task Details Drawer
+        async function openTaskDrawer(taskId) {
+            const drawer = document.getElementById('taskDrawer');
+            const drawerBody = document.getElementById('drawerBody');
+
+            drawer.classList.add('open');
+            drawerBody.innerHTML = '<div class="drawer-loading">Loading task details...</div>';
+
+            try {
+                const response = await window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/tasks/${taskId}`);
+                const task = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(task.detail || 'Failed to load task');
+                }
+
+                drawerBody.innerHTML = renderTaskDetails(task);
+            } catch (error) {
+                drawerBody.innerHTML = `<div class="drawer-loading" style="color: #e53e3e;">Error: ${escapeHtml(error.message)}</div>`;
+            }
+        }
+
+        function closeTaskDrawer() {
+            document.getElementById('taskDrawer').classList.remove('open');
+        }
+
+        function closeDrawerOnBackdrop(event) {
+            if (event.target.id === 'taskDrawer') {
+                closeTaskDrawer();
+            }
+        }
+
+        function renderTaskDetails(task) {
+            const successCodes = ['CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED', 'SIGNATURE_PENDING'];
+            const isSuccess = task.outcome_code && successCodes.includes(task.outcome_code);
+            const isFailed = task.status === 'FAILED' || ['WRONG_CONTACT', 'REFUSED_INFO', 'ERROR'].includes(task.outcome_code);
+
+            let html = `
+                <div class="drawer-section">
+                    <h4>Task Information</h4>
+                    <div class="drawer-field">
+                        <div class="drawer-label">Task ID</div>
+                        <div class="drawer-value">${escapeHtml(task.task_id)}</div>
+                    </div>
+                    <div class="drawer-field">
+                        <div class="drawer-label">Workflow</div>
+                        <div class="drawer-value">${formatWorkflowBadge(task.workflow_type)}</div>
+                    </div>
+                    <div class="drawer-field">
+                        <div class="drawer-label">Doctor</div>
+                        <div class="drawer-value">${escapeHtml(task.doctor_name)}</div>
+                    </div>
+                    <div class="drawer-field">
+                        <div class="drawer-label">Doctor Phone</div>
+                        <div class="drawer-value">${escapeHtml(task.doctor_phone || 'N/A')}</div>
+                    </div>
+                    <div class="drawer-field">
+                        <div class="drawer-label">Patient</div>
+                        <div class="drawer-value">${escapeHtml(task.patient_alias)}</div>
+                    </div>
+                    <div class="drawer-field">
+                        <div class="drawer-label">Status</div>
+                        <div class="drawer-value"><span class="status-badge status-${task.status.toLowerCase()}">${task.status}</span></div>
+                    </div>
+                    <div class="drawer-field">
+                        <div class="drawer-label">Created</div>
+                        <div class="drawer-value">${formatTimestamp(task.created_at)}</div>
+                    </div>
+                </div>
+            `;
+
+            // Outcome section (only if resolved)
+            if (task.outcome_code) {
+                const outcomeClass = isFailed ? 'failed' : '';
+                const badgeClass = isSuccess ? '' : (isFailed ? 'failed' : 'pending');
+
+                html += `
+                    <div class="drawer-section">
+                        <h4>Outcome</h4>
+                        <div class="drawer-outcome ${outcomeClass}">
+                            <span class="outcome-code-badge ${badgeClass}">${escapeHtml(task.outcome_code.replace(/_/g, ' '))}</span>
+                            ${task.completed_at ? `<div class="drawer-label" style="margin-top: 0.5rem;">Completed: ${formatTimestamp(task.completed_at)}</div>` : ''}
+                            ${task.outcome_note ? `<div class="outcome-note" style="margin-top: 0.75rem;">${escapeHtml(task.outcome_note)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Call History section
+            if (task.call_history && task.call_history.length > 0) {
+                html += `
+                    <div class="drawer-section">
+                        <h4>Call History (${task.call_history.length} attempt${task.call_history.length !== 1 ? 's' : ''})</h4>
+                        <ul class="call-history-list">
+                            ${task.call_history.map(call => `
+                                <li class="call-history-item">
+                                    <div>
+                                        <span class="call-state ${call.state}">${escapeHtml(call.state)}</span>
+                                        ${call.duration_sec ? `<span class="call-duration">${call.duration_sec}s</span>` : ''}
+                                    </div>
+                                    <span class="call-time">${formatTimestamp(call.created_at)}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="drawer-section">
+                        <h4>Call History</h4>
+                        <div style="color: #718096; font-size: 0.9rem;">No calls made yet</div>
+                    </div>
+                `;
+            }
+
+            return html;
         }
         
         // Execute call immediately for a specific task
@@ -1765,6 +2415,11 @@
             if (tabName === 'activity' && activityData.length === 0) {
                 loadActivity();
             }
+
+            // Load impact data when switching to impact tab
+            if (tabName === 'impact' && !impactDataLoaded) {
+                loadImpactData();
+            }
         }
 
         // Load activity events from API
@@ -1844,21 +2499,36 @@
                 const icon = getEventIcon(entityType);
                 const timeAgo = formatTimeAgo(event.created_at_utc);
                 const details = formatEventDetails(event.details);
+                const isCallSummary = event.event_type === 'call.summary';
+                const summaryBadge = isCallSummary ? '<span class="summary-badge">SUMMARY</span>' : '';
+                const outcomeDisplay = isCallSummary && event.details?.outcome_code
+                    ? formatSummaryOutcome(event.details.outcome_code)
+                    : '';
 
                 return `
                     <div class="timeline-item">
                         <div class="timeline-icon ${entityType}">${icon}</div>
                         <div class="timeline-content ${entityType}">
                             <div class="timeline-header">
-                                <span class="timeline-type ${entityType}">${event.event_type.replace('.', ' ')}</span>
+                                <span class="timeline-type ${entityType}">${event.event_type.replace('.', ' ')}${summaryBadge}</span>
                                 <span class="timeline-time">${timeAgo}</span>
                             </div>
                             <div class="timeline-summary">${escapeHtml(event.summary_safe)}</div>
+                            ${outcomeDisplay}
                             ${details ? `<div class="timeline-details">${details}</div>` : ''}
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        // Format outcome code for call.summary events
+        function formatSummaryOutcome(outcomeCode) {
+            if (!outcomeCode) return '';
+            const successCodes = ['CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED', 'SIGNATURE_PENDING'];
+            const failedClass = successCodes.includes(outcomeCode) ? '' : 'failed';
+            const displayCode = outcomeCode.replace(/_/g, ' ');
+            return `<span class="summary-outcome ${failedClass}">${escapeHtml(displayCode)}</span>`;
         }
 
         // Get icon for event type
@@ -1896,6 +2566,167 @@
             if (details.outcome) parts.push(`Outcome: ${details.outcome}`);
 
             return parts.join(' • ');
+        }
+
+        // =================================================================
+        // IMPACT TAB FUNCTIONS (Read-Only)
+        // =================================================================
+
+        let impactDataLoaded = false;
+        let impactSummaryData = null;
+        let impactOutcomesData = null;
+
+        // Date range options
+        const impactDateRanges = {
+            '7d': 7,
+            '30d': 30,
+            '90d': 90,
+            'all': null
+        };
+
+        // Load impact data from API
+        async function loadImpactData() {
+            const summaryEl = document.getElementById('impactSummary');
+            const outcomesEl = document.getElementById('outcomeChart');
+            const periodEl = document.getElementById('impactPeriodDisplay');
+            const footerEl = document.getElementById('impactAssumptions');
+
+            summaryEl.innerHTML = '<div class="impact-loading">Loading metrics...</div>';
+            outcomesEl.innerHTML = '<div class="impact-loading">Loading outcomes...</div>';
+
+            try {
+                const params = getImpactDateParams();
+
+                // Fetch summary and outcomes in parallel
+                const [summaryRes, outcomesRes] = await Promise.all([
+                    window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/api/dashboard/summary?${params}`),
+                    window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/api/dashboard/outcomes?${params}`)
+                ]);
+
+                if (!summaryRes.ok || !outcomesRes.ok) {
+                    throw new Error('Failed to load impact data');
+                }
+
+                impactSummaryData = await summaryRes.json();
+                impactOutcomesData = await outcomesRes.json();
+                impactDataLoaded = true;
+
+                // Display period
+                const start = new Date(impactSummaryData.period.start).toLocaleDateString();
+                const end = new Date(impactSummaryData.period.end).toLocaleDateString();
+                periodEl.textContent = `${start} - ${end}`;
+
+                // Display assumptions in footer
+                footerEl.textContent = `Estimated time saved assumes ${impactSummaryData.assumptions.minutes_saved_per_call} minutes per call. ` +
+                    `Cost savings estimated at $${impactSummaryData.assumptions.hourly_rate}/hour.`;
+
+                // Render UI
+                renderImpactSummary();
+                renderOutcomeChart();
+
+            } catch (error) {
+                console.error('Error loading impact data:', error);
+                summaryEl.innerHTML = '<div class="impact-empty"><h4>Unable to load data</h4><p>Please try again later.</p></div>';
+                outcomesEl.innerHTML = '';
+            }
+        }
+
+        // Get date range query params
+        function getImpactDateParams() {
+            const rangeSelect = document.getElementById('impactDateRange');
+            const days = impactDateRanges[rangeSelect.value];
+
+            if (days === null) {
+                return ''; // All time - no date filter
+            }
+
+            const end = new Date();
+            const start = new Date();
+            start.setDate(start.getDate() - days);
+
+            return `start_date=${start.toISOString()}&end_date=${end.toISOString()}`;
+        }
+
+        // Render summary cards
+        function renderImpactSummary() {
+            const summaryEl = document.getElementById('impactSummary');
+            const m = impactSummaryData.metrics;
+
+            if (!impactSummaryData.has_data) {
+                summaryEl.innerHTML = `
+                    <div class="impact-empty" style="grid-column: 1 / -1;">
+                        <h4>No activity yet</h4>
+                        <p>Create a task or run a call to generate results.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Format avg days - handle null
+            const avgDays = m.avg_days_to_resolution !== null
+                ? m.avg_days_to_resolution.toFixed(1)
+                : 'N/A';
+
+            summaryEl.innerHTML = `
+                <div class="impact-card">
+                    <div class="value">${m.calls_attempted}</div>
+                    <div class="label">Calls Attempted</div>
+                </div>
+                <div class="impact-card">
+                    <div class="value">${m.calls_connected}</div>
+                    <div class="label">Calls Connected</div>
+                </div>
+                <div class="impact-card">
+                    <div class="value success">${m.successful_outcomes}</div>
+                    <div class="label">Successful Outcomes</div>
+                </div>
+                <div class="impact-card">
+                    <div class="value">${avgDays}</div>
+                    <div class="label">Avg Days to Resolution</div>
+                </div>
+                <div class="impact-card">
+                    <div class="value">${m.estimated_hours_saved}</div>
+                    <div class="label">Hours Saved</div>
+                    <div class="sublabel">(Estimated)</div>
+                </div>
+                <div class="impact-card">
+                    <div class="value money">$${m.estimated_cost_saved.toLocaleString()}</div>
+                    <div class="label">Cost Saved</div>
+                    <div class="sublabel">(Estimated)</div>
+                </div>
+            `;
+        }
+
+        // Render outcome distribution chart (horizontal bars)
+        function renderOutcomeChart() {
+            const chartEl = document.getElementById('outcomeChart');
+
+            if (!impactOutcomesData.has_data) {
+                chartEl.innerHTML = '<div class="impact-empty"><p>No outcome data yet.</p></div>';
+                return;
+            }
+
+            const outcomes = impactOutcomesData.outcomes;
+            const maxCount = Math.max(...outcomes.map(o => o.count), 1);
+
+            chartEl.innerHTML = outcomes.map(outcome => {
+                const widthPercent = (outcome.count / maxCount) * 100;
+                const barClass = outcome.is_success ? 'success' : 'other';
+
+                return `
+                    <div class="outcome-bar-container">
+                        <div class="outcome-bar-label">
+                            <span class="name">${outcome.label}</span>
+                            <span class="count">${outcome.count} (${outcome.percent}%)</span>
+                        </div>
+                        <div class="outcome-bar-track">
+                            <div class="outcome-bar-fill ${barClass}" style="width: ${widthPercent}%">
+                                ${widthPercent > 15 ? `<span class="outcome-bar-percent">${outcome.percent}%</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
     </script>
 
