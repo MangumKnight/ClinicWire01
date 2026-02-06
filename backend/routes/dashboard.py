@@ -33,19 +33,35 @@ DEFAULT_HOURLY_RATE = int(os.getenv("DEFAULT_HOURLY_RATE", "35"))
 
 # Success outcome codes - single source of truth
 # All other outcome codes are considered non-success
-SUCCESS_OUTCOME_CODES = ['CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED', 'SIGNATURE_PENDING']
+SUCCESS_OUTCOME_CODES = [
+    'SIGNED_CONFIRMED',
+    'RECEIVED_AWAITING_SIGNATURE',
+    # Legacy codes (backward compat with seed data)
+    'CONFIRMED_RECEIVED',
+    'CONFIRMED_SIGNED',
+    'SIGNATURE_PENDING',
+]
 
 # Outcome code labels for display
 OUTCOME_LABELS = {
+    # New taxonomy
+    'SIGNED_CONFIRMED': 'Signed & Confirmed',
+    'RECEIVED_AWAITING_SIGNATURE': 'Received - Awaiting Signature',
+    'NEEDS_RESEND': 'Needs Resend',
+    'WRONG_FAX_NUMBER': 'Wrong Fax Number',
+    'WRONG_CONTACT': 'Wrong Contact',
+    'CALLBACK_REQUESTED': 'Callback Requested',
+    'REFUSED': 'Refused',
+    'VOICEMAIL_LEFT': 'Voicemail Left',
+    'NO_ANSWER': 'No Answer',
+    'FAILED_TECHNICAL': 'Technical Failure',
+    # Legacy codes (backward compat with seed data)
     'CONFIRMED_RECEIVED': 'Confirmed Receipt',
     'CONFIRMED_SIGNED': 'Signed',
     'SIGNATURE_PENDING': 'Pending Signature',
-    'NEEDS_RESEND': 'Needs Resend',
-    'CALLBACK_REQUESTED': 'Callback Requested',
-    'WRONG_CONTACT': 'Wrong Contact',
     'REFUSED_INFO': 'Refused',
     'NO_DECISION': 'No Decision',
-    'ERROR': 'Error'
+    'ERROR': 'Error',
 }
 
 

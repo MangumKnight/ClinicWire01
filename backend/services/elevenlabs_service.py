@@ -29,8 +29,7 @@ class ElevenLabsService:
         patient_name: str,
         doctor_name: str,
         date_sent: str,
-        fax_number: str,
-        webhook_url: str
+        fax_number: str
     ) -> Optional[Dict[str, Any]]:
         """
         Make outbound call using ElevenLabs Conversational AI
@@ -38,18 +37,17 @@ class ElevenLabsService:
         if not self.is_configured():
             logger.error("ElevenLabs not configured")
             return None
-        
+
         try:
             # Format phone number
             if not to_number.startswith("+"):
-                # Clean and format number
                 cleaned = "".join(filter(str.isdigit, to_number))
                 if not cleaned.startswith("1") and len(cleaned) == 10:
                     to_number = f"+1{cleaned}"
                 else:
                     to_number = f"+{cleaned}"
-            
-            # Prepare payload (matching the HTML's structure)
+
+            # Prepare payload - only documented ElevenLabs parameters
             payload = {
                 "agent_id": self.agent_id,
                 "agent_phone_number_id": self.phone_number_id,
@@ -61,47 +59,68 @@ class ElevenLabsService:
                         "date_sent": date_sent,
                         "fax_number": fax_number
                     }
-                },
-                "webhook_url": webhook_url
+                }
             }
-            
-            # Make API call
+
             headers = {
                 "xi-api-key": self.api_key,
                 "Content-Type": "application/json"
             }
-            
+
+            logger.info(f"[ElevenLabs] Outbound call to {to_number}, agent={self.agent_id}")
+
             response = requests.post(
                 self.api_url,
                 json=payload,
                 headers=headers,
                 timeout=30
             )
-            
+
             if response.ok:
                 result = response.json()
-                # Log only IDs, not full response (may contain sensitive data)
-                conv_id = result.get("conversation_id") or result.get("call_id") or result.get("id")
-                twilio_sid_log = result.get("callSid", "N/A")
-                logger.info(f"ElevenLabs call initiated: conversation_id={conv_id}, twilio_sid={twilio_sid_log}")
-                
-                # Extract both conversation ID and Twilio call SID
                 conversation_id = result.get("conversation_id") or result.get("call_id") or result.get("id")
-                twilio_sid = result.get("callSid")  # This is what Twilio uses for webhooks
-                
+                twilio_sid = result.get("callSid")
+                logger.info(f"[ElevenLabs] Call initiated: conversation_id={conversation_id}, twilio_sid={twilio_sid}")
+
                 return {
-                    "call_id": conversation_id,  # ElevenLabs conversation ID
-                    "twilio_sid": twilio_sid,    # Twilio call SID for webhooks
+                    "call_id": conversation_id,
+                    "twilio_sid": twilio_sid,
                     "status": "initiated",
                     "response": result
                 }
             else:
-                logger.error(f"ElevenLabs API error: {response.status_code} - {response.text}")
+                logger.error(f"[ElevenLabs] API error: {response.status_code} - {response.text}")
                 return None
-                
+
         except requests.exceptions.RequestException as e:
-            logger.error(f"Request error calling ElevenLabs: {e}")
+            logger.error(f"[ElevenLabs] Request error: {e}")
             return None
         except Exception as e:
-            logger.error(f"Error making ElevenLabs call: {e}")
+            logger.error(f"[ElevenLabs] Error making call: {e}")
+            return None
+
+    def get_conversation(self, conversation_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get conversation details from ElevenLabs.
+        Returns status, duration, transcript summary, and analysis.
+
+        Status values: initiated, in-progress, processing, done, failed
+        """
+        if not self.is_configured():
+            return None
+
+        try:
+            url = f"https://api.elevenlabs.io/v1/convai/conversations/{conversation_id}"
+            headers = {"xi-api-key": self.api_key}
+
+            response = requests.get(url, headers=headers, timeout=15)
+
+            if response.ok:
+                return response.json()
+            else:
+                logger.warning(f"[ElevenLabs] Get conversation {conversation_id}: {response.status_code}")
+                return None
+
+        except Exception as e:
+            logger.error(f"[ElevenLabs] Error getting conversation {conversation_id}: {e}")
             return None

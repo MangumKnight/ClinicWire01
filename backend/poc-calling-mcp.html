@@ -526,10 +526,33 @@
             background: #e2e8f0;
         }
 
+        /* Task group wrapper */
+        .task-group {
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+
+        .task-group-header {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.5rem 0 0.25rem 50px;
+            border-bottom: 1px solid #edf2f7;
+            margin-bottom: 0.5rem;
+        }
+
+        .task-group + .task-group {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
         .timeline-item {
             position: relative;
             padding-left: 50px;
-            padding-bottom: 1.5rem;
+            padding-bottom: 1rem;
         }
 
         .timeline-item:last-child {
@@ -556,7 +579,7 @@
 
         .timeline-content {
             background: #f7fafc;
-            padding: 1rem;
+            padding: 0.85rem 1rem;
             border-radius: 8px;
             border-left: 3px solid #667eea;
         }
@@ -568,12 +591,19 @@
         .timeline-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.35rem;
+        }
+
+        .timeline-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .timeline-type {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
             text-transform: uppercase;
             color: #667eea;
@@ -583,21 +613,152 @@
         .timeline-type.call { color: #667eea; }
         .timeline-type.sms { color: #ed8936; }
 
+        /* Status pill */
+        .status-pill {
+            display: inline-block;
+            padding: 0.1rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .status-pill.completed { background: #c6f6d5; color: #22543d; }
+        .status-pill.failed { background: #fed7d7; color: #9b2c2c; }
+        .status-pill.no-answer { background: #fefcbf; color: #975a16; }
+        .status-pill.initiated { background: #bee3f8; color: #2a4365; }
+        .status-pill.created { background: #e9d8fd; color: #553c9a; }
+        .status-pill.sent { background: #feebc8; color: #7b341e; }
+        .status-pill.confirmed { background: #c6f6d5; color: #22543d; }
+        .status-pill.wrong-contact { background: #fed7d7; color: #9b2c2c; }
+        .status-pill.pending { background: #fefcbf; color: #975a16; }
+        .status-pill.needs-resend { background: #fefcbf; color: #975a16; }
+        .status-pill.callback { background: #bee3f8; color: #2a4365; }
+
         .timeline-time {
+            font-size: 0.7rem;
+            color: #a0aec0;
+            font-weight: 400;
+            white-space: nowrap;
+        }
+
+        .timeline-summary-text {
+            font-size: 0.9rem;
+            color: #2d3748;
+            line-height: 1.4;
+        }
+
+        .timeline-meta {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 0.35rem;
             font-size: 0.75rem;
-            color: #999;
+            color: #718096;
         }
 
-        .timeline-summary {
-            font-size: 0.95rem;
-            color: #333;
+        .timeline-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
         }
 
-        .timeline-details {
+        /* Emphasize call.summary events - most important signal */
+        .timeline-content.call-summary {
+            background: #f0f4ff;
+            border-left-color: #667eea;
+            border-left-width: 4px;
+        }
+
+        .timeline-content.call-summary .timeline-summary-text {
+            font-weight: 600;
+            color: #1a202c;
+        }
+
+        /* Expand/collapse details */
+        .detail-toggle {
+            background: none;
+            border: none;
+            color: #667eea;
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 0.25rem 0;
+            font-weight: 500;
+        }
+
+        .detail-toggle:hover {
+            text-decoration: underline;
+        }
+
+        .detail-panel {
+            display: none;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .detail-panel.open {
+            display: block;
+        }
+
+        .detail-section {
+            margin-bottom: 0.75rem;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #a0aec0;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.2rem;
+        }
+
+        .detail-value {
+            font-size: 0.85rem;
+            color: #2d3748;
+            line-height: 1.5;
+        }
+
+        .detail-value.muted {
+            font-size: 0.75rem;
+            color: #a0aec0;
+            font-family: monospace;
+        }
+
+        .detail-value.not-available {
             font-size: 0.8rem;
-            color: #666;
-            margin-top: 0.5rem;
+            color: #cbd5e0;
+            font-style: italic;
         }
+
+        .confidence-bar {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .confidence-bar-track {
+            width: 60px;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .confidence-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: #48bb78;
+        }
+
+        .confidence-bar-fill.medium { background: #ecc94b; }
+        .confidence-bar-fill.low { background: #f56565; }
 
         .load-more-btn {
             display: block;
@@ -678,23 +839,26 @@
         }
 
         .impact-card .value {
-            font-size: 1.75rem;
+            font-size: 1.85rem;
             font-weight: 700;
             color: #667eea;
             margin-bottom: 0.25rem;
+            line-height: 1.2;
         }
 
         .impact-card .value.success {
-            color: #10b981;
+            color: #059669;
+            font-size: 2rem;
         }
 
         .impact-card .value.money {
-            color: #10b981;
+            color: #059669;
         }
 
         .impact-card .label {
             font-size: 0.85rem;
-            color: #666;
+            color: #4a5568;
+            font-weight: 500;
         }
 
         .impact-card .sublabel {
@@ -730,16 +894,18 @@
         .outcome-bar-label {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.25rem;
-            font-size: 0.85rem;
+            margin-bottom: 0.35rem;
+            font-size: 0.9rem;
         }
 
         .outcome-bar-label .name {
-            color: #333;
+            color: #1a202c;
+            font-weight: 500;
         }
 
         .outcome-bar-label .count {
-            color: #666;
+            color: #4a5568;
+            font-weight: 500;
         }
 
         .outcome-bar-track {
@@ -789,7 +955,25 @@
         .impact-loading {
             text-align: center;
             padding: 2rem;
-            color: #999;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .impact-loading::before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: impact-spin 0.8s linear infinite;
+            margin-right: 0.75rem;
+            vertical-align: middle;
+        }
+
+        @keyframes impact-spin {
+            to { transform: rotate(360deg); }
         }
 
         .impact-empty {
@@ -1042,32 +1226,27 @@
             color: #c53030;
         }
 
-        /* Activity call.summary badge */
-        .summary-badge {
+        /* Outcome code display in detail panel */
+        .outcome-code-display {
             display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 0.15rem 0.5rem;
+            padding: 0.3rem 0.6rem;
             border-radius: 4px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-left: 0.5rem;
-        }
-
-        .summary-outcome {
-            display: inline-block;
-            background: #48bb78;
-            color: white;
-            padding: 0.15rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            margin-top: 0.5rem;
         }
 
-        .summary-outcome.failed {
-            background: #f56565;
+        .outcome-code-display.success { background: #c6f6d5; color: #22543d; }
+        .outcome-code-display.warning { background: #fefcbf; color: #975a16; }
+        .outcome-code-display.error { background: #fed7d7; color: #9b2c2c; }
+        .outcome-flag {
+            display: inline-block;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: #e2e8f0;
+            color: #4a5568;
+            margin-right: 0.25rem;
         }
     </style>
 </head>
@@ -1330,7 +1509,8 @@
         }
         
         let CONFIG = {
-            mcpBaseUrl: 'http://localhost:8001',
+            // Auto-detect server URL from current page origin (fixes port mismatch issues)
+            mcpBaseUrl: window.location.origin,
             mcpAuthToken: '',
             googleScriptUrl: 'https://script.google.com/macros/s/AKfycbzPaccJs2uN8lwAsJwBstDHTWbbJscW8yo3Ecod8gbKJV3lGk0FseeP-J8ddks0xbY/exec'
         };
@@ -1342,16 +1522,25 @@
         let isProcessingBatch = false;
         let isConnected = false;
 
+        // Activity tab state (must be declared before switchTab is called)
+        let activityData = [];
+        let activityNextCursor = null;
+        let activityHasMore = false;
+
+        // Impact tab state (must be declared before switchTab is called)
+        let impactDataLoaded = false;
+        let impactSummaryData = null;
+        let impactOutcomesData = null;
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Load saved configuration (keeping URL config for functionality)
+            // Clear any old localStorage config that might point to wrong port
             const savedUrl = localStorage.getItem('mcpBaseUrl');
-            const savedToken = localStorage.getItem('mcpAuthToken');
-            
-            if (savedUrl) {
-                CONFIG.mcpBaseUrl = savedUrl;
+            if (savedUrl && savedUrl.includes('localhost:8001')) {
+                localStorage.removeItem('mcpBaseUrl');
             }
-            
+
+            const savedToken = localStorage.getItem('mcpAuthToken');
             if (savedToken) {
                 CONFIG.mcpAuthToken = savedToken;
             }
@@ -1472,7 +1661,7 @@
             const filteredData = filterData();
             
             if (filteredData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 2rem;">No records found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem;">No records found</td></tr>';
                 return;
             }
             
@@ -1492,7 +1681,7 @@
                         <td>${formatPhone(poc.office_phone || poc.doctor_phone || '')}</td>
                         <td>${poc.date_sent || ''}</td>
                         <td>${poc.fax_number || ''}</td>
-                        <td><span class="status-badge status-${status}">${status}</span></td>
+                        <td>${formatStatusBadge(status.toUpperCase())}</td>
                         <td>${poc.last_call_date || poc.last_updated || '-'}</td>
                         <td>${poc.call_duration || '-'}</td>
                         <td>${poc.call_outcome || poc.notes || '-'}</td>
@@ -1811,16 +2000,21 @@
         
         // Load tasks from MCP server
         async function loadTasks() {
+            const tbody = document.getElementById('tableBody');
             try {
                 const response = await window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/tasks`);
                 const data = await response.json();
-                
+
                 if (response.ok && data.tasks) {
                     taskData = data.tasks;
                     updateTaskTable();
+                } else {
+                    console.error('Tasks API error:', response.status, data);
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 2rem; color: #e53e3e;">Failed to load tasks (${response.status}). Check console.</td></tr>`;
                 }
             } catch (error) {
                 console.error('Error loading tasks:', error);
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 2rem; color: #e53e3e;">Error loading tasks: ${error.message}</td></tr>`;
             }
         }
         
@@ -1853,7 +2047,7 @@
                         <div>${escapeHtml(task.doctor_name)}</div>
                         <div style="font-size: 0.75rem; color: #718096;">${task.doctor_phone || 'N/A'}</div>
                     </td>
-                    <td><span class="status-badge status-${task.status.toLowerCase()}">${task.status}</span></td>
+                    <td>${formatStatusBadge(task.status)}</td>
                     <td>${formatOutcomeBadge(task.outcome_code)}</td>
                     <td>${task.attempts || 0}</td>
                     <td>${formatTimestamp(task.created_at)}</td>
@@ -1880,11 +2074,25 @@
             return `<span class="workflow-badge">${escapeHtml(workflowType)}</span>`;
         }
 
+        // Format status as human-readable badge
+        function formatStatusBadge(status) {
+            if (!status) return '-';
+            const statusMap = {
+                'RESOLVED': { label: 'Completed', class: 'resolved' },
+                'QUEUED': { label: 'Pending', class: 'queued' },
+                'FAILED': { label: 'Failed', class: 'failed' },
+                'CALLING': { label: 'In Progress', class: 'calling' },
+                'NO_ANSWER_RETRY': { label: 'Retry', class: 'pending' }
+            };
+            const info = statusMap[status.toUpperCase()] || { label: status, class: status.toLowerCase() };
+            return `<span class="status-badge status-${info.class}">${info.label}</span>`;
+        }
+
         // Format outcome code as badge
         function formatOutcomeBadge(outcomeCode) {
             if (!outcomeCode) return '-';
-            const successCodes = ['CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED', 'SIGNATURE_PENDING'];
-            const failedCodes = ['WRONG_CONTACT', 'REFUSED_INFO', 'ERROR'];
+            const successCodes = ['SIGNED_CONFIRMED', 'RECEIVED_AWAITING_SIGNATURE', 'CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED', 'SIGNATURE_PENDING'];
+            const failedCodes = ['WRONG_CONTACT', 'WRONG_FAX_NUMBER', 'REFUSED', 'REFUSED_INFO', 'FAILED_TECHNICAL', 'ERROR'];
 
             let badgeClass = 'pending';
             if (successCodes.includes(outcomeCode)) {
@@ -1893,11 +2101,8 @@
                 badgeClass = 'failed';
             }
 
-            // Format the code for display
-            const displayCode = outcomeCode.replace(/_/g, ' ').toLowerCase()
-                .replace(/\b\w/g, c => c.toUpperCase());
-
-            return `<span class="outcome-badge ${badgeClass}">${escapeHtml(displayCode)}</span>`;
+            const displayLabel = getOutcomeLabel(outcomeCode);
+            return `<span class="outcome-badge ${badgeClass}">${escapeHtml(displayLabel)}</span>`;
         }
 
         // Task Details Drawer
@@ -1933,9 +2138,9 @@
         }
 
         function renderTaskDetails(task) {
-            const successCodes = ['CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED', 'SIGNATURE_PENDING'];
+            const successCodes = ['SIGNED_CONFIRMED', 'RECEIVED_AWAITING_SIGNATURE', 'CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED', 'SIGNATURE_PENDING'];
             const isSuccess = task.outcome_code && successCodes.includes(task.outcome_code);
-            const isFailed = task.status === 'FAILED' || ['WRONG_CONTACT', 'REFUSED_INFO', 'ERROR'].includes(task.outcome_code);
+            const isFailed = task.status === 'FAILED' || ['WRONG_CONTACT', 'WRONG_FAX_NUMBER', 'REFUSED', 'REFUSED_INFO', 'FAILED_TECHNICAL', 'ERROR'].includes(task.outcome_code);
 
             let html = `
                 <div class="drawer-section">
@@ -1962,7 +2167,7 @@
                     </div>
                     <div class="drawer-field">
                         <div class="drawer-label">Status</div>
-                        <div class="drawer-value"><span class="status-badge status-${task.status.toLowerCase()}">${task.status}</span></div>
+                        <div class="drawer-value">${formatStatusBadge(task.status)}</div>
                     </div>
                     <div class="drawer-field">
                         <div class="drawer-label">Created</div>
@@ -2338,10 +2543,15 @@
             }
         });
 
-        // Close modal on background click
-        document.getElementById('editContactModal').addEventListener('click', (e) => {
-            if (e.target.id === 'editContactModal') {
-                closeEditContactModal();
+        // Close modal on background click (deferred until DOM ready)
+        document.addEventListener('DOMContentLoaded', () => {
+            const editModal = document.getElementById('editContactModal');
+            if (editModal) {
+                editModal.addEventListener('click', (e) => {
+                    if (e.target.id === 'editContactModal') {
+                        closeEditContactModal();
+                    }
+                });
             }
         });
 
@@ -2395,12 +2605,10 @@
         // Activity Tab Functions
         // ==========================================
 
-        let activityData = [];
-        let activityNextCursor = null;
-        let activityHasMore = false;
-
         // Tab switching
         function switchTab(tabName) {
+            console.log('[Tab] Switching to:', tabName);
+
             // Update tab buttons
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.tab === tabName);
@@ -2412,13 +2620,19 @@
             });
 
             // Load activity when switching to activity tab
-            if (tabName === 'activity' && activityData.length === 0) {
-                loadActivity();
+            if (tabName === 'activity') {
+                console.log('[Tab] Activity tab - activityData.length:', activityData.length);
+                if (activityData.length === 0) {
+                    loadActivity();
+                }
             }
 
             // Load impact data when switching to impact tab
-            if (tabName === 'impact' && !impactDataLoaded) {
-                loadImpactData();
+            if (tabName === 'impact') {
+                console.log('[Tab] Impact tab - impactDataLoaded:', impactDataLoaded);
+                if (!impactDataLoaded) {
+                    loadImpactData();
+                }
             }
         }
 
@@ -2426,6 +2640,8 @@
         async function loadActivity(append = false) {
             const timeline = document.getElementById('activityTimeline');
             const loadMoreBtn = document.getElementById('loadMoreActivity');
+
+            console.log('[Activity] loadActivity called, append:', append);
 
             if (!append) {
                 timeline.innerHTML = '<div class="empty-timeline">Loading activity...</div>';
@@ -2443,32 +2659,36 @@
                     url += `&cursor=${activityNextCursor}`;
                 }
 
+                console.log('[Activity] Fetching:', url);
                 const response = await window.authManager.makeAuthenticatedRequest(url);
+                console.log('[Activity] Response status:', response.status);
 
                 if (!response.ok) {
-                    throw new Error('Failed to load activity');
+                    throw new Error(`Failed to load activity: ${response.status}`);
                 }
 
                 const data = await response.json();
+                console.log('[Activity] Data received, items:', data.items?.length);
 
                 if (append) {
                     activityData = [...activityData, ...data.items];
                 } else {
-                    activityData = data.items;
+                    activityData = data.items || [];
                 }
 
                 activityNextCursor = data.next_cursor;
                 activityHasMore = data.has_more;
 
                 renderActivityTimeline();
+                console.log('[Activity] Render complete');
 
                 // Show/hide load more button
                 loadMoreBtn.style.display = activityHasMore ? 'block' : 'none';
 
             } catch (error) {
-                console.error('Error loading activity:', error);
+                console.error('[Activity] Error:', error);
                 if (!append) {
-                    timeline.innerHTML = '<div class="empty-timeline">Failed to load activity. Please try again.</div>';
+                    timeline.innerHTML = `<div class="empty-timeline" style="color: #e53e3e;">Failed to load activity: ${error.message}</div>`;
                 }
             }
         }
@@ -2485,7 +2705,7 @@
             loadMoreBtn.textContent = 'Load More';
         }
 
-        // Render activity timeline
+        // Render activity timeline with task-based grouping
         function renderActivityTimeline() {
             const timeline = document.getElementById('activityTimeline');
 
@@ -2494,41 +2714,389 @@
                 return;
             }
 
-            timeline.innerHTML = activityData.map(event => {
-                const entityType = event.entity_type || 'task';
-                const icon = getEventIcon(entityType);
-                const timeAgo = formatTimeAgo(event.created_at_utc);
-                const details = formatEventDetails(event.details);
-                const isCallSummary = event.event_type === 'call.summary';
-                const summaryBadge = isCallSummary ? '<span class="summary-badge">SUMMARY</span>' : '';
-                const outcomeDisplay = isCallSummary && event.details?.outcome_code
-                    ? formatSummaryOutcome(event.details.outcome_code)
-                    : '';
+            // Group events by task_id (entity_id), preserving order
+            const groups = [];
+            const groupMap = {};
+            const ungrouped = [];
 
-                return `
-                    <div class="timeline-item">
-                        <div class="timeline-icon ${entityType}">${icon}</div>
-                        <div class="timeline-content ${entityType}">
-                            <div class="timeline-header">
-                                <span class="timeline-type ${entityType}">${event.event_type.replace('.', ' ')}${summaryBadge}</span>
-                                <span class="timeline-time">${timeAgo}</span>
-                            </div>
-                            <div class="timeline-summary">${escapeHtml(event.summary_safe)}</div>
-                            ${outcomeDisplay}
-                            ${details ? `<div class="timeline-details">${details}</div>` : ''}
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            activityData.forEach(event => {
+                const taskId = event.entity_id;
+                if (taskId) {
+                    if (!groupMap[taskId]) {
+                        groupMap[taskId] = { taskId, events: [] };
+                        groups.push(groupMap[taskId]);
+                    }
+                    groupMap[taskId].events.push(event);
+                } else {
+                    ungrouped.push(event);
+                }
+            });
+
+            let html = '';
+
+            // Render grouped events
+            groups.forEach(group => {
+                const label = getTaskGroupLabel(group.events);
+                html += `<div class="task-group">`;
+                html += `<div class="task-group-header">${escapeHtml(label)}</div>`;
+                group.events.forEach(event => {
+                    html += renderActivityItem(event);
+                });
+                html += `</div>`;
+            });
+
+            // Render ungrouped events
+            ungrouped.forEach(event => {
+                html += renderActivityItem(event);
+            });
+
+            timeline.innerHTML = html;
         }
 
-        // Format outcome code for call.summary events
-        function formatSummaryOutcome(outcomeCode) {
-            if (!outcomeCode) return '';
-            const successCodes = ['CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED', 'SIGNATURE_PENDING'];
-            const failedClass = successCodes.includes(outcomeCode) ? '' : 'failed';
-            const displayCode = outcomeCode.replace(/_/g, ' ');
-            return `<span class="summary-outcome ${failedClass}">${escapeHtml(displayCode)}</span>`;
+        // Derive a label for a task group from its events
+        function getTaskGroupLabel(events) {
+            // Try to find doctor/patient info from details
+            for (const e of events) {
+                const d = e.details || {};
+                if (d.doctor_name && d.patient_alias) {
+                    return `${d.patient_alias} → ${d.doctor_name}`;
+                }
+            }
+            // Fallback: parse from summary_safe ("Task created for X → Y" or "Call initiated to Dr Z")
+            for (const e of events) {
+                const s = e.summary_safe || '';
+                const arrowMatch = s.match(/for (.+?) → (.+)/);
+                if (arrowMatch) return `${arrowMatch[1]} → ${arrowMatch[2]}`;
+                const toMatch = s.match(/to (.+?)(?:\s*\(|$)/);
+                if (toMatch) return toMatch[1];
+            }
+            return `Task ${events[0].entity_id?.substring(0, 8) || 'unknown'}`;
+        }
+
+        // Render a single activity item (collapsed view)
+        function renderActivityItem(event) {
+            const entityType = event.entity_type || 'task';
+            const icon = getEventIcon(entityType);
+            const timestamp = formatActivityTime(event.created_at_utc);
+            const eventLabel = formatEventLabel(event.event_type);
+            const statusPill = getStatusPill(event);
+            const summaryText = getOnelinerSummary(event);
+            const metaHtml = getMetaLine(event);
+            const isCallSummary = event.event_type === 'call.summary';
+            const summaryClass = isCallSummary ? 'call-summary' : '';
+            const detailPanel = buildDetailPanel(event);
+            const hasDetails = detailPanel !== '';
+
+            return `
+                <div class="timeline-item">
+                    <div class="timeline-icon ${entityType}">${icon}</div>
+                    <div class="timeline-content ${entityType} ${summaryClass}">
+                        <div class="timeline-header">
+                            <div class="timeline-header-left">
+                                <span class="timeline-type ${entityType}">${eventLabel}</span>
+                                ${statusPill}
+                            </div>
+                            <span class="timeline-time">${timestamp}</span>
+                        </div>
+                        <div class="timeline-summary-text">${escapeHtml(summaryText)}</div>
+                        ${metaHtml}
+                        ${hasDetails ? `<button class="detail-toggle" onclick="toggleDetailPanel(this)">View details</button>` : ''}
+                        ${hasDetails ? `<div class="detail-panel">${detailPanel}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Toggle detail panel open/closed
+        function toggleDetailPanel(btn) {
+            const panel = btn.nextElementSibling;
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open');
+                btn.textContent = 'View details';
+            } else {
+                panel.classList.add('open');
+                btn.textContent = 'Hide details';
+            }
+        }
+
+        // Format event type into human-readable label
+        function formatEventLabel(eventType) {
+            const labels = {
+                'task.created': 'Task Created',
+                'task.updated': 'Task Updated',
+                'call.initiated': 'Call Initiated',
+                'call.completed': 'Call Completed',
+                'call.failed': 'Call Failed',
+                'call.no_answer': 'No Answer',
+                'call.summary': 'Call Summary',
+                'call.status_changed': 'Call Updated',
+                'sms.sent': 'SMS Sent'
+            };
+            return labels[eventType] || eventType.replace('.', ' ');
+        }
+
+        // Get status pill HTML based on event data
+        function getStatusPill(event) {
+            const d = event.details || {};
+            let label = '';
+            let cls = '';
+
+            if (event.event_type === 'call.summary' && d.outcome_code) {
+                const code = d.outcome_code;
+                label = getOutcomeLabel(code);
+                const successCodes = ['SIGNED_CONFIRMED', 'RECEIVED_AWAITING_SIGNATURE', 'CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED'];
+                const pendingCodes = ['SIGNATURE_PENDING', 'CALLBACK_REQUESTED', 'NEEDS_RESEND', 'VOICEMAIL_LEFT'];
+                if (successCodes.includes(code)) cls = 'confirmed';
+                else if (pendingCodes.includes(code)) cls = 'pending';
+                else if (code === 'WRONG_CONTACT' || code === 'WRONG_FAX_NUMBER') cls = 'wrong-contact';
+                else cls = 'failed';
+            } else if (d.call_status) {
+                label = d.call_status;
+                const statusMap = {
+                    'completed': 'completed',
+                    'answered': 'completed',
+                    'failed': 'failed',
+                    'busy': 'failed',
+                    'no-answer': 'no-answer'
+                };
+                cls = statusMap[d.call_status.toLowerCase()] || 'initiated';
+            } else if (event.event_type === 'call.initiated') {
+                label = d.mode === 'simulation' ? 'Simulated' : 'Initiated';
+                cls = 'initiated';
+            } else if (event.event_type === 'task.created') {
+                label = 'Created';
+                cls = 'created';
+            } else if (event.event_type === 'sms.sent') {
+                label = 'Sent';
+                cls = 'sent';
+            } else {
+                return '';
+            }
+
+            return `<span class="status-pill ${cls}">${escapeHtml(label)}</span>`;
+        }
+
+        // Get one-line summary text
+        function getOnelinerSummary(event) {
+            const d = event.details || {};
+            // Prefer details.summary (PHI-masked call summary)
+            if (d.summary) return d.summary;
+            // Fallback to summary_safe from API
+            if (event.summary_safe) return event.summary_safe;
+            return 'No summary available';
+        }
+
+        // Get meta line (duration, attempts, etc.)
+        function getMetaLine(event) {
+            const d = event.details || {};
+            const parts = [];
+
+            if (d.duration_sec != null && d.duration_sec > 0) {
+                const mins = Math.floor(d.duration_sec / 60);
+                const secs = d.duration_sec % 60;
+                parts.push(mins > 0 ? `${mins}m ${secs}s` : `${secs}s`);
+            }
+
+            if (d.previous_attempts != null) {
+                parts.push(`Attempt #${d.previous_attempts + 1}`);
+            }
+
+            if (d.workflow_type) {
+                parts.push(d.workflow_type.replace(/_/g, ' '));
+            }
+
+            if (d.mode === 'simulation') {
+                parts.push('Simulation');
+            }
+
+            if (d.doctor_name) {
+                parts.push(d.doctor_name);
+            }
+
+            if (parts.length === 0) return '';
+            return `<div class="timeline-meta">${parts.map(p => `<span>${escapeHtml(p)}</span>`).join('')}</div>`;
+        }
+
+        // Build expandable detail panel HTML
+        function buildDetailPanel(event) {
+            const d = event.details || {};
+            const sections = [];
+
+            // Call summary (for call.summary events)
+            if (event.event_type === 'call.summary') {
+                // Outcome code with visual treatment
+                if (d.outcome_code) {
+                    const successCodes = ['SIGNED_CONFIRMED', 'RECEIVED_AWAITING_SIGNATURE', 'CONFIRMED_RECEIVED', 'CONFIRMED_SIGNED'];
+                    const pendingCodes = ['SIGNATURE_PENDING', 'CALLBACK_REQUESTED', 'NEEDS_RESEND', 'VOICEMAIL_LEFT'];
+                    let cls = 'error';
+                    if (successCodes.includes(d.outcome_code)) cls = 'success';
+                    else if (pendingCodes.includes(d.outcome_code)) cls = 'warning';
+
+                    const humanLabel = getOutcomeLabel(d.outcome_code);
+                    let flagsHtml = '';
+                    if (d.flags && d.flags.length > 0) {
+                        const flagLabels = {
+                            'RESEND_DECLINED': 'Resend Declined',
+                            'URGENT_NOTED': 'Urgent',
+                            'MULTIPLE_DOCS': 'Multiple Docs',
+                            'FOLLOW_UP_NEEDED': 'Follow-up Needed'
+                        };
+                        flagsHtml = d.flags.map(f =>
+                            `<span class="outcome-flag">${escapeHtml(flagLabels[f] || f)}</span>`
+                        ).join(' ');
+                    }
+                    sections.push(`
+                        <div class="detail-section">
+                            <div class="detail-label">Outcome</div>
+                            <div class="detail-value">
+                                <span class="outcome-code-display ${cls}">${escapeHtml(humanLabel)}</span>
+                                ${flagsHtml ? `<div style="margin-top: 0.25rem;">${flagsHtml}</div>` : ''}
+                            </div>
+                        </div>
+                    `);
+                }
+
+                // Full summary text
+                if (d.summary) {
+                    sections.push(`
+                        <div class="detail-section">
+                            <div class="detail-label">Call Summary</div>
+                            <div class="detail-value">${escapeHtml(d.summary)}</div>
+                        </div>
+                    `);
+                }
+
+                // Next step
+                if (d.next_step) {
+                    sections.push(`
+                        <div class="detail-section">
+                            <div class="detail-label">Next Step</div>
+                            <div class="detail-value">${escapeHtml(d.next_step)}</div>
+                        </div>
+                    `);
+                }
+
+                // Confidence
+                if (d.confidence != null) {
+                    const pct = Math.round(d.confidence * 100);
+                    let barCls = '';
+                    if (pct < 50) barCls = 'low';
+                    else if (pct < 80) barCls = 'medium';
+                    sections.push(`
+                        <div class="detail-section">
+                            <div class="detail-label">Confidence</div>
+                            <div class="detail-value">
+                                <span class="confidence-bar">
+                                    <span class="confidence-bar-track">
+                                        <span class="confidence-bar-fill ${barCls}" style="width: ${pct}%"></span>
+                                    </span>
+                                    ${pct}%
+                                </span>
+                            </div>
+                        </div>
+                    `);
+                }
+
+                // Transcript placeholder
+                sections.push(`
+                    <div class="detail-section">
+                        <div class="detail-label">Transcript</div>
+                        <div class="detail-value not-available">Transcript not available yet</div>
+                    </div>
+                `);
+
+                // Debug metadata
+                const debugParts = [];
+                if (d.conversation_id) debugParts.push(`conversation_id: ${d.conversation_id}`);
+                if (d.source) debugParts.push(`source: ${d.source}`);
+                if (d.call_id) debugParts.push(`call_id: ${d.call_id}`);
+
+                if (debugParts.length > 0) {
+                    sections.push(`
+                        <div class="detail-section">
+                            <div class="detail-label">Debug</div>
+                            <div class="detail-value muted">${escapeHtml(debugParts.join(' | '))}</div>
+                        </div>
+                    `);
+                }
+            }
+
+            // Call completed/failed events
+            if (['call.completed', 'call.failed', 'call.no_answer'].includes(event.event_type)) {
+                if (d.call_status) {
+                    sections.push(`
+                        <div class="detail-section">
+                            <div class="detail-label">Call Status</div>
+                            <div class="detail-value">${escapeHtml(d.call_status)}</div>
+                        </div>
+                    `);
+                }
+                if (d.duration_sec != null) {
+                    const mins = Math.floor(d.duration_sec / 60);
+                    const secs = d.duration_sec % 60;
+                    sections.push(`
+                        <div class="detail-section">
+                            <div class="detail-label">Duration</div>
+                            <div class="detail-value">${mins > 0 ? mins + 'm ' : ''}${secs}s</div>
+                        </div>
+                    `);
+                }
+                if (d.previous_attempts != null) {
+                    sections.push(`
+                        <div class="detail-section">
+                            <div class="detail-label">Attempt</div>
+                            <div class="detail-value">#${d.previous_attempts + 1}</div>
+                        </div>
+                    `);
+                }
+            }
+
+            // Call initiated events
+            if (event.event_type === 'call.initiated') {
+                if (d.call_id) {
+                    sections.push(`
+                        <div class="detail-section">
+                            <div class="detail-label">ElevenLabs Conversation ID</div>
+                            <div class="detail-value muted">${escapeHtml(d.call_id)}</div>
+                        </div>
+                    `);
+                }
+                if (d.mode) {
+                    sections.push(`
+                        <div class="detail-section">
+                            <div class="detail-label">Mode</div>
+                            <div class="detail-value">${escapeHtml(d.mode)}</div>
+                        </div>
+                    `);
+                }
+            }
+
+            return sections.join('');
+        }
+
+        // Human-readable outcome labels
+        function getOutcomeLabel(code) {
+            const labels = {
+                // New taxonomy
+                'SIGNED_CONFIRMED': 'Signed & Confirmed',
+                'RECEIVED_AWAITING_SIGNATURE': 'Received - Awaiting Signature',
+                'NEEDS_RESEND': 'Needs Resend',
+                'WRONG_FAX_NUMBER': 'Wrong Fax Number',
+                'WRONG_CONTACT': 'Wrong Contact',
+                'CALLBACK_REQUESTED': 'Callback Requested',
+                'REFUSED': 'Refused',
+                'VOICEMAIL_LEFT': 'Voicemail Left',
+                'NO_ANSWER': 'No Answer',
+                'FAILED_TECHNICAL': 'Technical Failure',
+                // Legacy codes (backward compat with seed data)
+                'CONFIRMED_RECEIVED': 'Confirmed Receipt',
+                'CONFIRMED_SIGNED': 'Signed',
+                'SIGNATURE_PENDING': 'Pending Signature',
+                'REFUSED_INFO': 'Refused',
+                'NO_DECISION': 'No Decision',
+                'ERROR': 'Error'
+            };
+            return labels[code] || code.replace(/_/g, ' ');
         }
 
         // Get icon for event type
@@ -2541,40 +3109,31 @@
             }
         }
 
-        // Format time ago
-        function formatTimeAgo(dateStr) {
+        // Format timestamp for activity (absolute, with Today/Yesterday)
+        function formatActivityTime(dateStr) {
             const date = new Date(dateStr);
             const now = new Date();
-            const diff = Math.floor((now - date) / 1000);
+            const diffDays = Math.floor((now - date) / 86400000);
 
-            if (diff < 60) return 'just now';
-            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-            if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+            const time = date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
 
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        }
+            if (diffDays === 0) return `Today ${time}`;
+            if (diffDays === 1) return `Yesterday ${time}`;
 
-        // Format event details
-        function formatEventDetails(details) {
-            if (!details) return '';
-
-            const parts = [];
-            if (details.workflow_type) parts.push(`Workflow: ${details.workflow_type}`);
-            if (details.mode) parts.push(`Mode: ${details.mode}`);
-            if (details.duration_sec) parts.push(`Duration: ${details.duration_sec}s`);
-            if (details.outcome) parts.push(`Outcome: ${details.outcome}`);
-
-            return parts.join(' • ');
+            const dateFormatted = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+            });
+            return `${dateFormatted} ${time}`;
         }
 
         // =================================================================
         // IMPACT TAB FUNCTIONS (Read-Only)
         // =================================================================
-
-        let impactDataLoaded = false;
-        let impactSummaryData = null;
-        let impactOutcomesData = null;
 
         // Date range options
         const impactDateRanges = {
@@ -2591,25 +3150,36 @@
             const periodEl = document.getElementById('impactPeriodDisplay');
             const footerEl = document.getElementById('impactAssumptions');
 
+            console.log('[Impact] loadImpactData called');
+
             summaryEl.innerHTML = '<div class="impact-loading">Loading metrics...</div>';
             outcomesEl.innerHTML = '<div class="impact-loading">Loading outcomes...</div>';
 
             try {
                 const params = getImpactDateParams();
+                console.log('[Impact] Date params:', params);
+
+                const summaryUrl = `${CONFIG.mcpBaseUrl}/api/dashboard/summary?${params}`;
+                const outcomesUrl = `${CONFIG.mcpBaseUrl}/api/dashboard/outcomes?${params}`;
+                console.log('[Impact] Fetching:', summaryUrl, outcomesUrl);
 
                 // Fetch summary and outcomes in parallel
                 const [summaryRes, outcomesRes] = await Promise.all([
-                    window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/api/dashboard/summary?${params}`),
-                    window.authManager.makeAuthenticatedRequest(`${CONFIG.mcpBaseUrl}/api/dashboard/outcomes?${params}`)
+                    window.authManager.makeAuthenticatedRequest(summaryUrl),
+                    window.authManager.makeAuthenticatedRequest(outcomesUrl)
                 ]);
 
+                console.log('[Impact] Response statuses:', summaryRes.status, outcomesRes.status);
+
                 if (!summaryRes.ok || !outcomesRes.ok) {
-                    throw new Error('Failed to load impact data');
+                    throw new Error(`Failed to load impact data: summary=${summaryRes.status}, outcomes=${outcomesRes.status}`);
                 }
 
                 impactSummaryData = await summaryRes.json();
                 impactOutcomesData = await outcomesRes.json();
                 impactDataLoaded = true;
+
+                console.log('[Impact] Data received, has_data:', impactSummaryData.has_data, impactOutcomesData.has_data);
 
                 // Display period
                 const start = new Date(impactSummaryData.period.start).toLocaleDateString();
@@ -2623,10 +3193,11 @@
                 // Render UI
                 renderImpactSummary();
                 renderOutcomeChart();
+                console.log('[Impact] Render complete');
 
             } catch (error) {
-                console.error('Error loading impact data:', error);
-                summaryEl.innerHTML = '<div class="impact-empty"><h4>Unable to load data</h4><p>Please try again later.</p></div>';
+                console.error('[Impact] Error:', error);
+                summaryEl.innerHTML = `<div class="impact-empty"><h4>Unable to load data</h4><p>${error.message}</p></div>`;
                 outcomesEl.innerHTML = '';
             }
         }

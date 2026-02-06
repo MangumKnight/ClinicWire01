@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dotenv import load_dotenv
 
 # Import our modules
-from db.database import get_session, close_database
+from db.database import get_session, close_database, async_session_maker
 from db.auth_session import get_auth_session
 from db.repo_v2 import TaskRepository, CallEventRepository, SmsEventRepository, ActivityLogRepository
 from services.twilio_service import TwilioService
@@ -580,12 +580,21 @@ async def elevenlabs_webhook(request: Request):
 
 # Outcome codes allowlist (v1)
 VALID_OUTCOME_CODES = {
+    # Primary outcomes (new taxonomy)
+    "SIGNED_CONFIRMED",
+    "RECEIVED_AWAITING_SIGNATURE",
+    "NEEDS_RESEND",
+    "WRONG_FAX_NUMBER",
+    "WRONG_CONTACT",
+    "CALLBACK_REQUESTED",
+    "REFUSED",
+    "VOICEMAIL_LEFT",
+    "NO_ANSWER",
+    "FAILED_TECHNICAL",
+    # Legacy codes (accepted for backward compat with seed data)
     "CONFIRMED_RECEIVED",
     "CONFIRMED_SIGNED",
     "SIGNATURE_PENDING",
-    "NEEDS_RESEND",
-    "CALLBACK_REQUESTED",
-    "WRONG_CONTACT",
     "REFUSED_INFO",
     "NO_DECISION",
     "ERROR"
@@ -915,17 +924,14 @@ async def execute_call(
             return {"message": "Call initiated (simulation mode)", "task_id": str(task.id)}
         else:
             # Real call via ElevenLabs
-            webhook_url = f"{os.getenv('MCP_BASE_URL')}/webhooks/twilio/status"
-            
             call_result = elevenlabs_service.make_call(
-                to_number=task.doctor_phone,  # Call the doctor's phone
+                to_number=task.doctor_phone,
                 patient_name=task.patient_alias,
                 doctor_name=task.doctor_name,
                 date_sent=datetime.now().strftime("%m/%d/%Y"),
-                fax_number="",
-                webhook_url=webhook_url
+                fax_number=""
             )
-            
+
             if call_result and "call_id" in call_result:
                 # Store Twilio SID for webhook lookups
                 twilio_sid = call_result.get("twilio_sid") or call_result["call_id"]
@@ -945,7 +951,12 @@ async def execute_call(
                     summary=f"Call initiated to {task.doctor_name}",
                     task_id=task.id,
                     actor_id=auth.user_id,
-                    details={"call_id": call_result["call_id"]}
+                    details={"call_id": call_result["call_id"], "conversation_id": call_result["call_id"]}
+                )
+
+                # Start background poller to close the lifecycle
+                asyncio.create_task(
+                    poll_elevenlabs_conversation(task.id, call_result["call_id"], twilio_sid)
                 )
 
                 return {"message": "Call initiated successfully", "task_id": str(task.id), "call_id": call_result["call_id"]}
@@ -1195,6 +1206,535 @@ async def process_retries():
                 
         except Exception as e:
             logger.error(f"[Retry] Error in retry processor: {e}")
+
+def _build_fallback_summary(
+    outcome_code: str,
+    outcome_flags: list,
+    duration_sec: int,
+    user_turns: list,
+) -> str:
+    """
+    Build an operator-grade summary when ElevenLabs' transcript_summary
+    is unavailable. Uses the already-inferred outcome, flags, and
+    the most substantive user speech turn to produce a summary that
+    answers: what happened, POC state, commitments, and follow-up.
+    """
+    n_turns = len(user_turns)
+    has_time = "TIME_COMMITMENT_GIVEN" in outcome_flags
+    has_followup = "FOLLOW_UP_NEEDED" in outcome_flags
+
+    # Find the most substantive user turn (longest message) — this is
+    # typically where the office states their answer.
+    key_utterance = ""
+    if user_turns:
+        longest = max(user_turns, key=lambda t: len(t.get("message", "")))
+        key_utterance = longest.get("message", "").strip()
+
+    # Truncate to a reasonable display length
+    if len(key_utterance) > 300:
+        key_utterance = key_utterance[:297] + "..."
+
+    call_info = f"({n_turns} exchanges, {duration_sec}s)"
+
+    # Outcome-specific summary templates
+    if outcome_code == "SIGNED_CONFIRMED":
+        base = "Office confirmed the plan of care has been signed and returned."
+    elif outcome_code == "RECEIVED_AWAITING_SIGNATURE":
+        if has_time:
+            base = "Office confirmed receipt of the plan of care and stated it would be signed and returned."
+        else:
+            base = "Office confirmed receipt of the plan of care and indicated intent to sign."
+    elif outcome_code == "NEEDS_RESEND":
+        base = "Office reported the fax was not received. Resend required."
+    elif outcome_code == "REFUSED":
+        base = "Office explicitly refused to sign or process the plan of care."
+    elif outcome_code == "WRONG_CONTACT":
+        base = "Contact is incorrect — person or office is not associated with this provider."
+    elif outcome_code == "WRONG_FAX_NUMBER":
+        base = "Office reported the fax number on file is incorrect."
+    elif outcome_code == "CALLBACK_REQUESTED" and has_followup:
+        base = f"Call connected {call_info} but outcome could not be determined from available data. Manual follow-up recommended."
+    elif outcome_code == "CALLBACK_REQUESTED":
+        base = "Office requested a callback at a later time."
+    elif outcome_code == "VOICEMAIL_LEFT":
+        base = "Reached voicemail. Message left regarding plan of care signature."
+    elif outcome_code == "NO_ANSWER":
+        base = f"No answer — call ended after {duration_sec}s with no verbal response."
+    elif outcome_code == "FAILED_TECHNICAL":
+        base = "Call failed due to a technical issue."
+    else:
+        base = f"Call completed {call_info}."
+
+    # Append time commitment detail if present
+    if has_time and outcome_code in ("RECEIVED_AWAITING_SIGNATURE", "SIGNED_CONFIRMED", "CALLBACK_REQUESTED"):
+        # Extract time references from the key utterance — prefer specific over vague.
+        lower_utt = key_utterance.lower()
+        time_match = None
+        # Check specific phrases first (longer = more informative)
+        for phrase in ["before 5 p.m.", "before 4 p.m.", "before 3 p.m.",
+                       "before 2 p.m.", "by the end of today",
+                       "by the end of the day", "by end of day",
+                       "by close of business", "before noon",
+                       "by tomorrow morning", "by tomorrow",
+                       "tomorrow morning", "tomorrow afternoon",
+                       "this afternoon", "this morning",
+                       "5 p.m.", "4 p.m.", "3 p.m.",
+                       "before 5", "before 4", "before 3",
+                       "end of today", "today", "tomorrow"]:
+            if phrase in lower_utt:
+                time_match = phrase
+                break
+        if time_match:
+            base = base.rstrip(".") + f" — timeframe: {time_match}."
+
+    # For substantive calls, append key quote if it adds value
+    # (skip short pleasantries like "bye", "thank you", "okay")
+    if key_utterance and len(key_utterance) > 40 and outcome_code not in ("NO_ANSWER", "FAILED_TECHNICAL"):
+        base += f' Key response: "{key_utterance}"'
+
+    return base
+
+
+def _infer_outcome_code(
+    status: str,
+    call_successful: str,
+    user_turns: list,
+    termination_reason: str,
+    raw_summary: str
+) -> dict:
+    """
+    Infer an operator-grade outcome from ElevenLabs conversation data.
+
+    Returns dict with:
+      - "primary": one of the 10 primary outcome codes
+      - "flags": list of secondary flags (0 or more)
+
+    Priority order (first match wins for primary):
+      1. Technical failures: call failed, no speech
+      2. Wrong contact (always reliable, no ambiguity)
+      3. Document state: signed → received/will sign → needs resend
+         THIS OVERRIDES any secondary "declined" language.
+      4. Explicit refusal to sign/process (only if no positive document signals)
+      5. Logistics: wrong fax number, voicemail, callback requested
+      6. Fallback: NO_ANSWER
+
+    REFUSED hard rule: ONLY used when the summary explicitly indicates
+    refusal to sign, refusal to process the POC, or refusal to provide info.
+    "Declined callback", "declined resend", "already have it" are NOT refusals.
+
+    Flags are additive — all matching flags are returned regardless of primary.
+    """
+    result = {"primary": None, "flags": []}
+
+    # --- Technical failures (no summary to parse) ---
+    if status == "failed":
+        result["primary"] = "FAILED_TECHNICAL"
+        return result
+
+    if len(user_turns) == 0:
+        result["primary"] = "NO_ANSWER"
+        return result
+
+    # If we have user turns but no summary text, do NOT return NO_ANSWER.
+    # The call was answered. Fall through to keyword matching on whatever
+    # text we have (may be transcript-derived). If nothing matches,
+    # the end-of-function fallback handles answered-but-unclear calls.
+    if not raw_summary.strip():
+        # No text at all to analyze, but call WAS answered (user_turns > 0).
+        # This should be rare — poller now passes transcript text as fallback.
+        # Use CALLBACK_REQUESTED + FOLLOW_UP_NEEDED: we connected but can't
+        # determine outcome, so operator should follow up.
+        result["primary"] = "CALLBACK_REQUESTED"
+        result["flags"].append("FOLLOW_UP_NEEDED")
+        return result
+
+    s = raw_summary.lower()
+
+    # =================================================================
+    # FLAGS: collected first, independent of primary outcome.
+    # These are secondary actions, NOT outcomes.
+    # =================================================================
+
+    # RESEND_DECLINED: declined a resend offer (NOT a refusal to sign)
+    if any(p in s for p in [
+        "declined the resend", "declined a resend", "declined to have it resent",
+        "declined resend", "did not need a resend", "did not want a resend",
+        "doesn't need a resend", "does not need a resend",
+        "no need to resend", "no resend needed", "resend was not necessary",
+        "declined the offer to resend", "declined to receive another"
+    ]):
+        result["flags"].append("RESEND_DECLINED")
+
+    # CALLBACK_DECLINED: declined an offer to call back (NOT a refusal)
+    if any(p in s for p in [
+        "declined the callback", "declined a callback", "declined to call back",
+        "declined the offer to call back", "but the user declined",
+        "but they declined", "did not need a callback",
+        "no need to call back", "no callback needed",
+        "declined the follow-up call", "declined further calls"
+    ]):
+        result["flags"].append("CALLBACK_DECLINED")
+
+    # TIME_COMMITMENT_GIVEN: specific timeframe mentioned for action
+    if any(p in s for p in [
+        "before 5", "before 4", "before 3", "before 2", "before noon",
+        "by end of day", "by the end of the day", "by close of business",
+        "by tomorrow", "tomorrow", "by monday", "by tuesday",
+        "by wednesday", "by thursday", "by friday",
+        "this afternoon", "this morning",
+        "within the hour", "within 24 hours", "today",
+        "p.m.", "a.m."
+    ]):
+        result["flags"].append("TIME_COMMITMENT_GIVEN")
+
+    if any(p in s for p in ["urgent", "urgency", "as soon as possible", "asap", "time-sensitive"]):
+        result["flags"].append("URGENT_NOTED")
+
+    if any(p in s for p in ["multiple fax", "multiple document", "several fax", "both fax"]):
+        result["flags"].append("MULTIPLE_DOCS")
+
+    if any(p in s for p in ["follow up", "follow-up", "following up", "check back"]):
+        result["flags"].append("FOLLOW_UP_NEEDED")
+
+    # =================================================================
+    # PRIMARY OUTCOME: first match wins.
+    # =================================================================
+
+    # --- Layer 1: Wrong contact (always unambiguous) ---
+    if any(p in s for p in [
+        "wrong number", "wrong contact", "wrong office", "wrong person",
+        "no longer at", "no longer here", "no longer with",
+        "retired", "not at this location", "left the practice",
+        "doesn't work here", "does not work here", "moved away",
+        "no such person", "never heard of", "not a patient here"
+    ]):
+        result["primary"] = "WRONG_CONTACT"
+        return result
+
+    # --- Layer 2: Document state (OVERRIDES any declined language) ---
+    # This is checked BEFORE refusal because: if they confirmed receipt
+    # and/or stated intent to sign, that is the operative outcome.
+    # Any "declined callback/resend" in the same summary is a secondary flag.
+
+    has_signed = any(p in s for p in [
+        "already signed", "signed the", "signed and fax", "signed and sent",
+        "signature complete", "signed it", "has been signed"
+    ])
+
+    has_will_sign = any(p in s for p in [
+        "will sign", "would sign", "going to sign", "plan to sign",
+        "plans to sign", "intend to sign", "promised to sign",
+        "agreed to sign", "will be signed", "get it signed",
+        "get him to sign", "get her to sign", "get dr", "get doctor",
+        "fax it back", "fax back", "faxed back", "send it back",
+        "have it sent", "get it sent", "sent back",
+        "return it", "will sign and fax back", "will sign and send back",
+        "sign and fax it back", "sign and return"
+    ])
+
+    has_not_received = any(p in s for p in [
+        "didn't receive", "did not receive", "not received",
+        "never received", "hasn't received", "has not received",
+        "haven't received", "can't find", "cannot find",
+        "unable to locate", "don't have", "do not have"
+    ])
+
+    has_received = not has_not_received and any(p in s for p in [
+        "confirmed receipt", "confirmed they received", "confirmed receiving",
+        "received the fax", "received the plan", "received the document",
+        "have the fax", "has the fax", "got the fax",
+        "found the fax", "located the fax", "found it",
+        "found the plan", "i found", "we found",
+        "confirmed the fax", "confirmed the document", "confirmed the plan",
+        "we have it", "they have it", "received it",
+        "have the plan", "has the plan"
+    ])
+
+    # Already signed (past tense) → SIGNED_CONFIRMED
+    if has_signed:
+        result["primary"] = "SIGNED_CONFIRMED"
+        return result
+
+    # Confirmed receipt or stated intent to sign → RECEIVED_AWAITING_SIGNATURE
+    if has_received or has_will_sign:
+        result["primary"] = "RECEIVED_AWAITING_SIGNATURE"
+        return result
+
+    # Explicitly not received → NEEDS_RESEND
+    if has_not_received:
+        result["primary"] = "NEEDS_RESEND"
+        return result
+
+    # Resend request (but not if they declined a resend with no other context)
+    if any(p in s for p in ["resend", "re-send", "send again", "send another"]):
+        if "RESEND_DECLINED" not in result["flags"]:
+            result["primary"] = "NEEDS_RESEND"
+            return result
+
+    # --- Layer 3: Explicit refusal to sign/process ---
+    # ONLY fires when there are NO positive document signals above.
+    # Must be specific phrases — bare "declined" or "refused" alone do NOT count.
+    if any(p in s for p in [
+        "refused to sign", "will not sign", "won't sign", "refuses to sign",
+        "refused to participate", "declined to sign", "declined to provide",
+        "refused to cooperate", "refused to confirm", "will not cooperate",
+        "not handling this patient", "not our patient", "do not send",
+        "stop calling", "do not call", "asked not to be called",
+        "we are not handling", "will not process"
+    ]):
+        result["primary"] = "REFUSED"
+        return result
+
+    # --- Layer 4: Logistics ---
+    if any(p in s for p in [
+        "wrong fax number", "wrong fax", "incorrect fax number",
+        "fax number is wrong", "fax number was wrong", "fax to the wrong"
+    ]):
+        result["primary"] = "WRONG_FAX_NUMBER"
+        return result
+
+    # Voicemail before callback — voicemail summaries often mention "callback"
+    if any(p in s for p in ["voicemail", "voice mail", "left a message", "answering machine"]):
+        result["primary"] = "VOICEMAIL_LEFT"
+        return result
+
+    if any(p in s for p in [
+        "call back", "callback", "try again later", "call again",
+        "better time", "not available right now", "busy right now"
+    ]):
+        result["primary"] = "CALLBACK_REQUESTED"
+        return result
+
+    # --- Layer 5: Weak positive ---
+    if any(p in s for p in ["confirmed", "will take care of it", "acknowledged"]):
+        result["primary"] = "RECEIVED_AWAITING_SIGNATURE"
+        return result
+
+    # Fallback: had speech but no clear keyword signal.
+    # The call WAS answered (user_turns > 0 checked above), so NO_ANSWER
+    # is categorically wrong here. Use CALLBACK_REQUESTED with FOLLOW_UP_NEEDED
+    # to signal that an operator should verify the outcome manually.
+    result["primary"] = "CALLBACK_REQUESTED"
+    result["flags"].append("FOLLOW_UP_NEEDED")
+    return result
+
+
+async def poll_elevenlabs_conversation(task_id: uuid.UUID, conversation_id: str, twilio_sid: str):
+    """
+    Poll ElevenLabs for conversation status until it reaches a terminal state.
+    When done/failed, write call.completed/call.failed and call.summary activity events.
+    """
+    POLL_INTERVAL = 5   # seconds between polls
+    MAX_POLLS = 120     # 10 minutes max (120 * 5s)
+    TERMINAL_STATUSES = {"done", "failed"}
+
+    logger.info(f"[ElevenLabs-Poll] Starting for task={task_id}, conv={conversation_id}")
+
+    for attempt in range(MAX_POLLS):
+        await asyncio.sleep(POLL_INTERVAL)
+
+        conv_data = elevenlabs_service.get_conversation(conversation_id)
+        if not conv_data:
+            logger.warning(f"[ElevenLabs-Poll] No data for conv={conversation_id}, attempt {attempt+1}")
+            continue
+
+        status = conv_data.get("status", "")
+        logger.info(f"[ElevenLabs-Poll] conv={conversation_id} status={status} (attempt {attempt+1})")
+
+        if status not in TERMINAL_STATUSES:
+            continue
+
+        # Terminal status reached - extract data
+        metadata = conv_data.get("metadata") or {}
+        analysis = conv_data.get("analysis") or {}
+        transcript = conv_data.get("transcript") or []
+        duration_sec = metadata.get("call_duration_secs") or 0
+        termination_reason = metadata.get("termination_reason", "")
+        call_successful = analysis.get("call_successful", "unknown")
+        raw_summary = analysis.get("transcript_summary", "")
+
+        # Count user speech turns to detect silent/no-response calls
+        user_turns = [t for t in transcript if t.get("role") == "user" and t.get("message", "").strip()]
+
+        # Determine if the ElevenLabs summary is usable
+        # ElevenLabs returns error strings like "Unable to generate call summary..."
+        # when their summarizer fails (common on silent/short calls)
+        summary_is_error = (
+            not raw_summary
+            or "unable to generate" in raw_summary.lower()
+            or "unexpected error" in raw_summary.lower()
+        )
+
+        # When ElevenLabs summary fails but we have transcript, build a
+        # fallback summary from USER speech only. Agent speech introduces
+        # false positives (e.g., agent asking "would you like me to resend?"
+        # triggers NEEDS_RESEND even when user declined).
+        inference_summary = ""
+        if summary_is_error and len(user_turns) > 0:
+            user_messages = [
+                t.get("message", "").strip()
+                for t in user_turns
+                if t.get("message", "").strip()
+            ]
+            inference_summary = " ".join(user_messages)
+            logger.info(
+                f"[ElevenLabs-Poll] Summary unavailable, using user speech "
+                f"({len(user_messages)} turns, {len(inference_summary)} chars) "
+                f"for outcome inference"
+            )
+        elif not summary_is_error:
+            inference_summary = raw_summary
+
+        # Run outcome inference FIRST — summary text depends on outcome.
+        outcome_result = _infer_outcome_code(
+            status=status,
+            call_successful=call_successful,
+            user_turns=user_turns,
+            termination_reason=termination_reason,
+            raw_summary=inference_summary
+        )
+        outcome_code = outcome_result["primary"]
+        outcome_flags = outcome_result["flags"]
+
+        # Build human-readable summary text.
+        if not summary_is_error:
+            # ElevenLabs summary is good — use it directly.
+            summary_text = raw_summary
+        else:
+            # ElevenLabs summary unavailable — build operator-grade summary
+            # from outcome + flags + call metadata.
+            summary_text = _build_fallback_summary(
+                outcome_code=outcome_code,
+                outcome_flags=outcome_flags,
+                duration_sec=duration_sec,
+                user_turns=user_turns,
+            )
+
+        # Mask PHI in summary
+        masked_summary = mask_phi_in_text(summary_text)
+
+        # Map to our call status
+        if status == "done":
+            call_status = "completed"
+            new_task_status = "RESOLVED"
+        else:
+            call_status = "failed"
+            new_task_status = "FAILED"
+
+        logger.info(
+            f"[ElevenLabs-Poll] Terminal: conv={conversation_id} "
+            f"status={status} duration={duration_sec}s "
+            f"successful={call_successful} reason={termination_reason} "
+            f"user_turns={len(user_turns)} outcome={outcome_code}"
+            f"{' flags=' + ','.join(outcome_flags) if outcome_flags else ''}"
+        )
+
+        # Write to database
+        async with async_session_maker() as session:
+            try:
+                call_event_repo = CallEventRepository(session)
+                task_repo = TaskRepository(session)
+                activity_repo = ActivityLogRepository(session)
+
+                # Update call event
+                await call_event_repo.update_call_event_system(
+                    twilio_sid,
+                    call_status,
+                    duration_sec,
+                    {"elevenlabs_status": status, "termination_reason": termination_reason}
+                )
+
+                # Get task for org_id
+                call_event = await call_event_repo.get_by_twilio_sid_system(twilio_sid)
+                if not call_event or not call_event.task:
+                    logger.error(f"[ElevenLabs-Poll] Task not found for twilio_sid={twilio_sid}")
+                    return
+                task = call_event.task
+
+                # Update task status
+                await task_repo.update_status_system(task.id, new_task_status)
+
+                # Write call.completed / call.failed activity
+                event_type = "call.completed" if call_status == "completed" else "call.failed"
+                await activity_repo.log_event(
+                    org_id=task.org_id,
+                    event_type=event_type,
+                    summary=f"Call {call_status} for {task.doctor_name}",
+                    task_id=task.id,
+                    actor_id=None,
+                    details={
+                        "call_status": call_status,
+                        "duration_sec": duration_sec,
+                        "termination_reason": termination_reason,
+                        "previous_attempts": task.attempts,
+                        "conversation_id": conversation_id
+                    }
+                )
+
+                # Write call.summary activity
+                await activity_repo.log_event(
+                    org_id=task.org_id,
+                    event_type="call.summary",
+                    summary=f"Call summary received: {outcome_code}",
+                    task_id=task.id,
+                    actor_id=None,
+                    details={
+                        "outcome_code": outcome_code,
+                        "flags": outcome_flags,
+                        "summary": masked_summary,
+                        "next_step": None,
+                        "confidence": None,
+                        "source": "elevenlabs-poll",
+                        "conversation_id": conversation_id
+                    }
+                )
+
+                # Update task outcome
+                await task_repo.update_outcome_v2(
+                    task_id=task.id,
+                    org_id=task.org_id,
+                    outcome_code=outcome_code,
+                    outcome_note=masked_summary,
+                    completed_at_utc=datetime.now(timezone.utc)
+                )
+
+                logger.info(
+                    f"[ElevenLabs-Poll] Lifecycle closed: task={task.id} "
+                    f"status={new_task_status} outcome={outcome_code}"
+                )
+
+            except Exception as e:
+                logger.error(f"[ElevenLabs-Poll] DB error for conv={conversation_id}: {e}")
+
+        return  # Done - exit the poller
+
+    # Timed out
+    logger.warning(f"[ElevenLabs-Poll] Timed out for conv={conversation_id} after {MAX_POLLS * POLL_INTERVAL}s")
+
+    # Mark as failed on timeout
+    async with async_session_maker() as session:
+        try:
+            call_event_repo = CallEventRepository(session)
+            task_repo = TaskRepository(session)
+            activity_repo = ActivityLogRepository(session)
+
+            await call_event_repo.update_call_event_system(twilio_sid, "failed", 0, {"reason": "poll_timeout"})
+
+            call_event = await call_event_repo.get_by_twilio_sid_system(twilio_sid)
+            if call_event and call_event.task:
+                task = call_event.task
+                await task_repo.update_status_system(task.id, "FAILED", "ElevenLabs poll timeout")
+                await activity_repo.log_event(
+                    org_id=task.org_id,
+                    event_type="call.failed",
+                    summary=f"Call timed out for {task.doctor_name}",
+                    task_id=task.id,
+                    actor_id=None,
+                    details={"call_status": "timeout", "conversation_id": conversation_id}
+                )
+        except Exception as e:
+            logger.error(f"[ElevenLabs-Poll] Timeout cleanup error: {e}")
+
 
 async def simulate_call_flow(task_id: str):
     """Simulate call completion for testing"""
